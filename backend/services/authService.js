@@ -42,11 +42,11 @@ exports.getUserProfile = async (userId) => {
   return user;
 };
 
-exports.verifyUserEmail = async (id, code) => {
-  const user = await User.findById(id);
+exports.verifyUserEmail = async (userId, verificationCode) => {
+  const user = await User.findById(userId);
   if (!user) throw new Error("User not found");
 
-  if (user.verificationCode !== code) {
+  if (user.verificationCode !== verificationCode) {
     throw new Error("Invalid verification code");
   }
 
