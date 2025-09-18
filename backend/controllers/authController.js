@@ -30,7 +30,7 @@ exports.me = async (req, res) => {
 exports.verifyEmail = async (req, res) => {
   try {
     const id = req.body.userId;
-    const code = req.body.code;
+    const code = req.body.verificationCode;
     const message = await authService.verifyUserEmail(id, code);
     res.status(200).json({ message });
   } catch (error) {
