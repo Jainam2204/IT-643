@@ -47,8 +47,10 @@ exports.verifyUserEmail = async (userId, verificationCode) => {
   if (!user) throw new Error("User not found");
 
   if (user.verificationCode !== verificationCode) {
+      console.log("Code error");
     throw new Error("Invalid verification code");
   }
+
 
   user.isVerified = true;
   user.verificationCode = null;
