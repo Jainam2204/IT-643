@@ -14,23 +14,50 @@ import {
   ListItemText,
   Divider,
   alpha,
+  Badge,
+  Popover,
+  Card,
+  CardContent,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
+import CloseIcon from "@mui/icons-material/Close";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify"; // ✅ Added import
+import { useNotifications } from "../context/NotificationContext";
 
 const Navbar = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const navigate = useNavigate();
   const navItems = ["Dashboard", "Profile", "Connections", "Chat"];
+  const { meetingNotifications, removeMeetingNotification } =
+    useNotifications();
 
   const toggleDrawer = (open) => () => {
     setDrawerOpen(open);
+  };
+
+  const handleNotificationClick = (event) => {
+    setNotificationAnchorEl(event.currentTarget);
+  };
+
+  const handleNotificationClose = () => {
+    setNotificationAnchorEl(null);
+  };
+
+  const handleJoinMeet = (meetingId, connectionId) => {
+    removeMeetingNotification(meetingId);
+    handleNotificationClose();
+    navigate(`/meet/${meetingId}`);
+  };
+
+  const handleDismissNotification = (meetingId) => {
+    removeMeetingNotification(meetingId);
   };
 
   // ✅ Centralized Logout Function
@@ -40,6 +67,9 @@ const Navbar = () => {
     toast.success("Logged out successfully!");
     navigate("/login");
   };
+
+  const notificationCount = Object.keys(meetingNotifications).length;
+  const open = Boolean(notificationAnchorEl);
 
   return (
     <>
@@ -138,8 +168,13 @@ const Navbar = () => {
               ))}
             </Box>
 
-            <IconButton sx={{ color: "white" }}>
-              <NotificationsActiveIcon />
+            <IconButton
+              sx={{ color: "white" }}
+              onClick={handleNotificationClick}
+            >
+              <Badge badgeContent={notificationCount} color="error">
+                <NotificationsActiveIcon />
+              </Badge>
             </IconButton>
 
             <IconButton
@@ -245,6 +280,98 @@ const Navbar = () => {
           </Box>
         </Box>
       </Drawer>
+
+      {/* Notification Popover */}
+      <Popover
+        open={open}
+        anchorEl={notificationAnchorEl}
+        onClose={handleNotificationClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+      >
+        <Box
+          sx={{
+            width: 350,
+            maxHeight: 400,
+            overflowY: "auto",
+            p: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
+            Meeting Invitations
+          </Typography>
+
+          {notificationCount === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No pending meeting invitations
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              {Object.entries(meetingNotifications).map(([meetingId, notif]) => (
+                <Card
+                  key={meetingId}
+                  elevation={2}
+                  sx={{
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    color: "white",
+                  }}
+                >
+                  <CardContent sx={{ pb: 1 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        mb: 1.5,
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
+                        📹 {notif.connectionName}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDismissNotification(meetingId)}
+                        sx={{
+                          color: "white",
+                          padding: 0,
+                          "&:hover": { opacity: 0.8 },
+                        }}
+                      >
+                        <CloseIcon sx={{ fontSize: "18px" }} />
+                      </IconButton>
+                    </Box>
+                    <Typography variant="body2" sx={{ mb: 1.5, opacity: 0.95 }}>
+                      started a meeting with you
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      fullWidth
+                      onClick={() => handleJoinMeet(meetingId, notif.connectionId)}
+                      sx={{
+                        backgroundColor: "white",
+                        color: "#667eea",
+                        fontWeight: "bold",
+                        "&:hover": {
+                          backgroundColor: "#f0f0f0",
+                        },
+                      }}
+                    >
+                      Join Meet
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Popover>
     </>
   );
 };
