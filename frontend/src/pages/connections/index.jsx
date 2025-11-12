@@ -15,10 +15,15 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 import Navbar from "../../components/Navbar";
+import { useNavigate } from "react-router-dom";
+import { useNotifications } from "../../context/NotificationContext";
 
 const Connections = () => {
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [creatingMeetingId, setCreatingMeetingId] = useState(null);
+  const navigate = useNavigate();
+  const { meetingNotifications } = useNotifications();
 
   useEffect(() => {
     const fetchConnections = async () => {
@@ -31,7 +36,6 @@ const Connections = () => {
       }
 
       try {
-        // ✅ Parse user from localStorage
         const user = JSON.parse(userData);
         const userId = user._id || user.id || user.userId;
 
@@ -40,14 +44,13 @@ const Connections = () => {
           return;
         }
 
-        // ✅ Fixed URL quotes and Authorization syntax
         const res = await axios.get("http://localhost:3000/connect/connections", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         setConnections(res.data.data || []);
       } catch (err) {
-        console.error("❌ Error fetching connections:", err);
+        console.error("Error fetching connections:", err);
         toast.error("Failed to fetch connections");
       } finally {
         setLoading(false);
@@ -56,6 +59,36 @@ const Connections = () => {
 
     fetchConnections();
   }, []);
+
+  const handleStartMeeting = async (inviteeId) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please log in to start a meeting");
+      return;
+    }
+    try {
+      setCreatingMeetingId("creating");
+      const res = await axios.post(
+        "http://localhost:3000/meetings",
+        { title: "", inviteeId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const meetingId = res.data?.meetingId;
+      if (!meetingId) throw new Error("Failed to create meeting");
+      navigate(`/meet/${meetingId}`);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to create meeting");
+    } finally {
+      setCreatingMeetingId(null);
+    }
+  };
+
+  const getActiveMeetingForConnection = (connectionId) => {
+    return Object.values(meetingNotifications).find(
+      (notif) => notif.connectionId === connectionId
+    );
+  };
 
   if (loading)
     return (
@@ -94,7 +127,7 @@ const Connections = () => {
 
           {!connections.length ? (
             <Typography align="center" sx={{ color: "gray" }}>
-              You haven’t connected with anyone yet 🤝
+              You haven’t connected with anyone yet 
             </Typography>
           ) : (
             <Grid container spacing={3}>
@@ -148,24 +181,47 @@ const Connections = () => {
                           }}
                           onClick={() => toast.info("Feature coming soon!")}
                         >
-                          ❌ Remove
+                          Remove
                         </Button>
 
-                        <Button
-                          variant="contained"
-                          size="small"
-                          sx={{
-                            textTransform: "none",
-                            borderRadius: 3,
-                            backgroundColor: "#43a047",
-                            "&:hover": { backgroundColor: "#2e7d32" },
-                          }}
-                          onClick={() =>
-                            toast.info("Chat feature coming soon!")
-                          }
-                        >
-                          💬 Message
-                        </Button>
+                        {getActiveMeetingForConnection(conn._id) ? (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            sx={{
+                              textTransform: "none",
+                              borderRadius: 3,
+                              backgroundColor: "#4caf50",
+                              "&:hover": { backgroundColor: "#388e3c" },
+                            }}
+                            onClick={() => {
+                              const activeMeet =
+                                getActiveMeetingForConnection(conn._id);
+                              if (activeMeet) {
+                                navigate(`/meet/${activeMeet.meetingId}`);
+                              }
+                            }}
+                          >
+                            Join Meet
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            sx={{
+                              textTransform: "none",
+                              borderRadius: 3,
+                              backgroundColor: "#1976d2",
+                              "&:hover": { backgroundColor: "#1259a3" },
+                            }}
+                            onClick={() => handleStartMeeting(conn._id)}
+                            disabled={creatingMeetingId === "creating"}
+                          >
+                            {creatingMeetingId === "creating"
+                              ? "Starting..."
+                              : "Meet"}
+                          </Button>
+                        )}
                       </Stack>
                     </CardContent>
                   </Card>

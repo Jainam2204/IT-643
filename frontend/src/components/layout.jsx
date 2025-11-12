@@ -1,9 +1,45 @@
-import React from "react";
-import { Box } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, Dialog, DialogActions, DialogContent, DialogTitle, Button, Typography } from "@mui/material";
 import Navbar from "./Navbar";
 import { Outlet } from "react-router-dom";
+import { getSocket, disconnectSocket } from "../services/socket";
+import { useNavigate } from "react-router-dom";
+import { NotificationProvider } from "../context/NotificationContext";
+import { MeetNotificationListener } from "./MeetNotificationListener";
 
-const Layout = ({ onLogout }) => {
+const LayoutContent = ({ onLogout }) => {
+  const [invite, setInvite] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    const s = getSocket(token);
+    const handler = (payload) => {
+      setInvite(payload);
+    };
+    s.on("meeting-invite", handler);
+    return () => {
+      try {
+        s.off("meeting-invite", handler);
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
+
+  const handleJoin = () => {
+    if (invite?.meetingId) {
+      const id = invite.meetingId;
+      setInvite(null);
+      navigate(`/meet/${id}`);
+    } else {
+      setInvite(null);
+    }
+  };
+
+  const handleDismiss = () => setInvite(null);
+
   return (
     <Box
       sx={{
@@ -15,6 +51,7 @@ const Layout = ({ onLogout }) => {
         backgroundColor: "#f8fafc",
       }}
     >
+      <MeetNotificationListener />
       <Navbar onLogout={onLogout} />
       <Box
         component="main"
@@ -26,7 +63,27 @@ const Layout = ({ onLogout }) => {
       >
         <Outlet />
       </Box>
+      <Dialog open={!!invite} onClose={handleDismiss}>
+        <DialogTitle>Incoming meeting</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            You have been invited to join a meeting.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDismiss} color="inherit">Dismiss</Button>
+          <Button onClick={handleJoin} variant="contained">Join</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
+  );
+};
+
+const Layout = ({ onLogout }) => {
+  return (
+    <NotificationProvider>
+      <LayoutContent onLogout={onLogout} />
+    </NotificationProvider>
   );
 };
 

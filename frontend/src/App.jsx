@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import Layout from "./components/Layout";
 import Profile from "./pages/profile";
 import Connections from "./pages/connections"
+import MeetHome from "./pages/Meet";
+import MeetingRoom from "./pages/Meet/Room";
 function App() {
   const handleLogout = () => {
     localStorage.removeItem("token"); 
@@ -36,6 +38,8 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile/>}></Route>
           <Route path="/connections" element={<Connections />} />
+          <Route path="/meet" element={<MeetHome />} />
+          <Route path="/meet/:id" element={<MeetingRoom />} />
 
         </Route>
       </Routes>
