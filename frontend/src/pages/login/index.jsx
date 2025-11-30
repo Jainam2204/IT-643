@@ -16,8 +16,8 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-export default function LoginForm() {
-    const navigate = useNavigate();
+export default function LoginForm({ setUser }) {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -28,14 +28,21 @@ export default function LoginForm() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-   const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const res = await axios.post("http://localhost:3000/auth/login", formData);
+
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      if (setUser) {
+        setUser(res.data.user);
+      }
+
       console.log("Logged in user:", res.data.user);
       toast.success(res.data.message || "Login successful!");
+
       navigate("/dashboard");
     } catch (err) {
       console.error(err);
@@ -44,17 +51,16 @@ export default function LoginForm() {
   };
 
   return (
-  <Box
-  sx={{
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "linear-gradient(135deg, #f0f4f8 0%, #e9eff6 100%)",
-    p: 2,
-  }}
->
-
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #f0f4f8 0%, #e9eff6 100%)",
+        p: 2,
+      }}
+    >
       <Container maxWidth="sm">
         <Paper
           elevation={3}
