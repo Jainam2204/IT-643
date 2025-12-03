@@ -12,9 +12,9 @@ const LayoutContent = ({ onLogout }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return undefined;
-    const s = getSocket(token);
+    const userData = localStorage.getItem("user");
+  if (!userData) return undefined;
+  const s = getSocket();
     const handler = (payload) => {
       setInvite(payload);
     };

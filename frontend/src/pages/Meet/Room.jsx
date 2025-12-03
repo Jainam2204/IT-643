@@ -134,9 +134,10 @@ export default function MeetingRoom() {
       }
 
       // Connect socket
-      const token = localStorage.getItem("token");
-      const s = getSocket(token || "");
-      socketRef.current = s;
+      // cookie-based socket, no token
+const s = getSocket();
+socketRef.current = s;
+
 
       // Receive list of current peers
       s.on("rtc-room-users", async ({ peers }) => {

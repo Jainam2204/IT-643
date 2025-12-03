@@ -12,7 +12,7 @@ import {
   Divider,
   Stack,
 } from "@mui/material";
-import axios from "axios";
+import api from "../../utils/api";
 import { toast } from "react-toastify";
 import Navbar from "../../components/Navbar";
 import { useNavigate } from "react-router-dom";
@@ -25,64 +25,66 @@ const Connections = () => {
   const navigate = useNavigate();
   const { meetingNotifications } = useNotifications();
 
-  useEffect(() => {
-    const fetchConnections = async () => {
-      const token = localStorage.getItem("token");
-      const userData = localStorage.getItem("user");
+useEffect(() => {
+  const fetchConnections = async () => {
+    const userData = localStorage.getItem("user");
 
-      if (!token || !userData) {
-        toast.error("You must be logged in to view connections");
+    if (!userData) {
+      toast.error("You must be logged in to view connections");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userData);
+      const userId = user._id || user.id || user.userId;
+
+      if (!userId) {
+        toast.error("Invalid user data. Please log in again.");
+        setLoading(false);
         return;
       }
 
-      try {
-        const user = JSON.parse(userData);
-        const userId = user._id || user.id || user.userId;
-
-        if (!userId) {
-          toast.error("Invalid user data. Please log in again.");
-          return;
-        }
-
-        const res = await axios.get("http://localhost:3000/connect/connections", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setConnections(res.data.data || []);
-      } catch (err) {
-        console.error("Error fetching connections:", err);
-        toast.error("Failed to fetch connections");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchConnections();
-  }, []);
-
-  const handleStartMeeting = async (inviteeId) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error("Please log in to start a meeting");
-      return;
-    }
-    try {
-      setCreatingMeetingId("creating");
-      const res = await axios.post(
-        "http://localhost:3000/meetings",
-        { title: "", inviteeId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const meetingId = res.data?.meetingId;
-      if (!meetingId) throw new Error("Failed to create meeting");
-      navigate(`/meet/${meetingId}`);
+      // ✅ cookie-based request
+      const res = await api.get("/connect/connections");
+      setConnections(res.data.data || []);
     } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || "Failed to create meeting");
+      console.error("Error fetching connections:", err);
+      toast.error("Failed to fetch connections");
     } finally {
-      setCreatingMeetingId(null);
+      setLoading(false);
     }
   };
+
+  fetchConnections();
+}, []);
+
+
+const handleStartMeeting = async (inviteeId) => {
+  const userData = localStorage.getItem("user");
+  if (!userData) {
+    toast.error("Please log in to start a meeting");
+    return;
+  }
+
+  try {
+    setCreatingMeetingId("creating");
+
+    // ✅ cookie-based request
+    const res = await api.post("/meetings", { title: "", inviteeId });
+
+    const meetingId = res.data?.meetingId;
+    if (!meetingId) throw new Error("Failed to create meeting");
+
+    navigate(`/meet/${meetingId}`);
+  } catch (err) {
+    console.error(err);
+    toast.error(err.response?.data?.message || "Failed to create meeting");
+  } finally {
+    setCreatingMeetingId(null);
+  }
+};
+
 
   const getActiveMeetingForConnection = (connectionId) => {
     return Object.values(meetingNotifications).find(

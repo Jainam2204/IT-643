@@ -4,11 +4,26 @@ const Message = require('./models/Message');
 let ioInstance = null;
 const onlineUsers = new Map();
 
+// Helper function to parse cookies from cookie header
+function parseCookies(cookieHeader) {
+  if (!cookieHeader) return {};
+  return cookieHeader.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    if (key && value) acc[key] = decodeURIComponent(value);
+    return acc;
+  }, {});
+}
+
 function initializeSocket(io) {
   ioInstance = io;
 
   io.use((socket, next) => {
-    const token =
+    // Parse cookies from handshake headers
+    const cookieHeader = socket.handshake.headers.cookie;
+    const cookies = parseCookies(cookieHeader);
+    
+    // Try to get token from cookie first, then fallback to other methods
+    let token = cookies.authToken ||
       socket.handshake.auth?.token ||
       socket.handshake.query?.token ||
       socket.handshake.headers?.authorization?.replace(/^Bearer\s+/i, '') ||

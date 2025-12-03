@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../utils/api";
 import useAuth from "../../hooks/useAuth";
 import { toast } from "react-toastify";
 
@@ -68,13 +68,8 @@ const Subscription = () => {
 
     const fetchStatus = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const { data } = await axios.get(
-          `${API_BASE_URL}/status/${currentUser._id}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          }
-        );
+        const { data } = await api.get(`/subscription/status/${currentUser._id}`);
+
 
         const expiryDate = data.expiryDate ? new Date(data.expiryDate) : null;
         const isExpired = expiryDate && expiryDate < new Date();
@@ -113,19 +108,14 @@ const Subscription = () => {
     try {
       setProcessingPlan(planName);
 
-      const token = localStorage.getItem("token");
-      console.log("Creating order for plan:", planName);
+      const { data: orderData } = await api.post(
+  "/subscription/create-order",
+  {
+    userId: currentUser._id,
+    planName,
+  }
+);
 
-      const { data: orderData } = await axios.post(
-        `${API_BASE_URL}/create-order`,
-        {
-          userId: currentUser._id,
-          planName,
-        },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
 
       console.log("Order created:", orderData);
 
@@ -156,7 +146,7 @@ const Subscription = () => {
         handler: async (response) => {
           console.log("Payment successful, response:", response);
           try {
-            const token = localStorage.getItem("token");
+            
 
             if (
               !response.razorpay_payment_id ||
@@ -172,31 +162,27 @@ const Subscription = () => {
               orderId: response.razorpay_order_id,
               paymentId: response.razorpay_payment_id,
             });
+            const verifyRes = await api.post(
+  "/subscription/verify-payment",
+  {
+    userId: currentUser._id,
+    planName,
+    orderId: response.razorpay_order_id,
+    paymentId: response.razorpay_payment_id,
+    signature: response.razorpay_signature,
+  }
+);
 
-            const verifyRes = await axios.post(
-              `${API_BASE_URL}/verify-payment`,
-              {
-                userId: currentUser._id,
-                planName,
-                orderId: response.razorpay_order_id,
-                paymentId: response.razorpay_payment_id,
-                signature: response.razorpay_signature,
-              },
-              {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-              }
-            );
+            
 
             console.log("Payment verified successfully:", verifyRes.data);
             toast.success("Subscription activated successfully!");
 
             try {
-              const statusRes = await axios.get(
-                `${API_BASE_URL}/status/${currentUser._id}`,
-                {
-                  headers: token ? { Authorization: `Bearer ${token}` } : {},
-                }
-              );
+             const statusRes = await api.get(
+  `/subscription/status/${currentUser._id}`
+);
+
 
               const expiryDate = statusRes.data.expiryDate
                 ? new Date(statusRes.data.expiryDate)
@@ -334,10 +320,7 @@ const Subscription = () => {
       >
         <Box textAlign="center">
           <CircularProgress />
-          <Typography
-            variant="body2"
-            sx={{ mt: 2, color: "text.secondary" }}
-          >
+          <Typography variant="body2" sx={{ mt: 2, color: "text.secondary" }}>
             Loading subscription details...
           </Typography>
         </Box>
@@ -367,29 +350,18 @@ const Subscription = () => {
 
   return (
     <Box sx={{ flex: 1, bgcolor: "#ffffff", p: 4 }}>
-      <Typography
-        variant="h4"
-        align="center"
-        fontWeight="bold"
-        sx={{ mb: 2 }}
-      >
+      <Typography variant="h4" align="center" fontWeight="bold" sx={{ mb: 2 }}>
         Subscription Plans
       </Typography>
 
       {isSubscribed ? (
-        <Typography
-          align="center"
-          sx={{ mb: 3, color: "success.main" }}
-        >
+        <Typography align="center" sx={{ mb: 3, color: "success.main" }}>
           You&apos;re subscribed to <b>{activePlan}</b> till{" "}
           <b>{subscription.expiryDate?.toDateString()}</b> <br />
           Connections left: <b>{subscription.connectionsLeft}</b>
         </Typography>
       ) : (
-        <Typography
-          align="center"
-          sx={{ mb: 3, color: "error.main" }}
-        >
+        <Typography align="center" sx={{ mb: 3, color: "error.main" }}>
           No active subscription. Free connections:{" "}
           <b>{subscription?.connectionsLeft ?? 2}</b>
         </Typography>
@@ -467,20 +439,13 @@ const PlanCard = ({
       }}
     >
       {/* Title */}
-      <Typography
-        variant="h5"
-        fontWeight="700"
-        sx={{ mb: 1 }}
-      >
+      <Typography variant="h5" fontWeight="700" sx={{ mb: 1 }}>
         {title}
       </Typography>
 
       {/* Price */}
       {price > 0 && (
-        <Typography
-          variant="h6"
-          sx={{ mb: 2, color: "text.secondary" }}
-        >
+        <Typography variant="h6" sx={{ mb: 2, color: "text.secondary" }}>
           ₹{price} / month
         </Typography>
       )}
@@ -488,11 +453,7 @@ const PlanCard = ({
       {/* Features */}
       <List sx={{ mb: 2 }}>
         {features.map((f) => (
-          <ListItem
-            key={f}
-            disablePadding
-            sx={{ justifyContent: "center" }}
-          >
+          <ListItem key={f} disablePadding sx={{ justifyContent: "center" }}>
             <ListItemText
               primary={f}
               primaryTypographyProps={{
