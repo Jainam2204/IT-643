@@ -34,7 +34,7 @@ const Navbar = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const navigate = useNavigate();
-  const navItems = ["Dashboard", "Profile", "Connections", "Chat"];
+  const navItems = ["Dashboard", "Profile", "Connections", "Chat", "Subscription"];
   const { meetingNotifications, removeMeetingNotification } =
     useNotifications();
 

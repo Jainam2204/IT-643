@@ -13,6 +13,7 @@ import Connections from "./pages/connections";
 import MeetHome from "./pages/Meet";
 import MeetingRoom from "./pages/Meet/Room";
 import Chat from "./pages/Chat";
+import Subscription from "./pages/Subscription";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -80,6 +81,7 @@ function App() {
           <Route path="/meet" element={<MeetHome />} />
           <Route path="/meet/:id" element={<MeetingRoom />} />
           <Route path="/chat" element={<Chat user={user} setUser={setUser} />} />
+          <Route path="/subscription" element={<Subscription />} />
 
         </Route>
       </Routes>
