@@ -80,6 +80,7 @@ function App() {
           <Route path="/meet" element={<MeetHome />} />
           <Route path="/meet/:id" element={<MeetingRoom />} />
           <Route path="/chat" element={<Chat user={user} setUser={setUser} />} />
+
         </Route>
       </Routes>
     </Router>

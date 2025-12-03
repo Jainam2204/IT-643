@@ -40,7 +40,7 @@ function Chat({ user, setUser }) {
       setLoadingUsers(true);
       setUsersError(null);
 
-      const res = await api.get('/connect/connections');
+      const res = await api.get('/chat/connections');
       const raw = res.data;
 
       const usersArray = Array.isArray(raw)

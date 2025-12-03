@@ -1,10 +1,9 @@
-const { getChatConnections } = require('../services/chatService');
+const { getUserConnections } = require('../services/connection');
 
 async function getChatUserList(req, res) {
   try {
     const userId = req.user._id;
-    console.log('Fetching chat connections for userId:', userId);
-    const result = await getChatConnections(userId);
+    const result = await getUserConnections(userId);
     res.json(result);
   } catch (err) {
     console.error('Error in getChatUserList:', err);

@@ -27,7 +27,7 @@ import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CloseIcon from "@mui/icons-material/Close";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify"; // ✅ Added import
+import { toast } from "react-toastify";
 import { useNotifications } from "../context/NotificationContext";
 
 const Navbar = () => {
