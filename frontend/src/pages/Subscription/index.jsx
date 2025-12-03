@@ -397,7 +397,7 @@ const Subscription = () => {
 
       <Box sx={{ maxWidth: 1200, mx: "auto", mt: 4 }}>
         <Grid container spacing={3} justifyContent="center">
-          <Grid item xs={12} md={4}>
+          {/* <Grid item xs={12} md={4}>
             <PlanCard
               title="Basic Plan"
               price={99}
@@ -426,7 +426,40 @@ const Subscription = () => {
               onClick={() => handleSubscribe("Premium")}
               highlighted
             />
-          </Grid>
+          </Grid> */}
+
+          <Grid item xs={12} md={4}>
+  <PlanCard
+    title="Basic Plan"
+    price={99}
+    features={[
+      "Connect with up to 5 skill partners",
+      "Perfect for starting your skill-sharing journey",
+      "Start swapping skills and learning together",
+    ]}
+    active={activePlan === "Basic"}
+    loading={processingPlan === "Basic"}
+    onClick={() => handleSubscribe("Basic")}
+    highlighted={activePlan === "Basic"}
+  />
+</Grid>
+
+<Grid item xs={12} md={4}>
+  <PlanCard
+    title="Premium Plan"
+    price={299}
+    features={[
+      "Connect with up to 15 skill partners",
+      "Exchange skills faster and learn more",
+      "Become a true SkillXchange power-user",
+    ]}
+    active={activePlan === "Premium"}
+    loading={processingPlan === "Premium"}
+    onClick={() => handleSubscribe("Premium")}
+    highlighted={activePlan === "Premium"}
+  />
+</Grid>
+
         </Grid>
       </Box>
     </Box>
