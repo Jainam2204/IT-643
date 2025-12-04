@@ -35,3 +35,18 @@ exports.hasReportedUser = async (req, res) => {
     res.status(500).json({ message: err.message || "Server error" });
   }
 };
+exports.getMyReportStats = async (req, res) => {
+  try {
+    const userId = req.user._id; // coming from auth middleware
+
+    const stats = await reportService.getMyReportStats(userId);
+
+    return res.status(200).json(stats);
+  } catch (err) {
+    console.error("getMyReportStats error:", err);
+
+    return res.status(500).json({
+      message: err.message || "Failed to fetch report stats",
+    });
+  }
+};

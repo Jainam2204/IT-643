@@ -25,6 +25,11 @@ const Dashboard = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [loading, setLoading] = useState(true);
+const [reportStats, setReportStats] = useState({
+  reportCount: 0,
+  isBanned: false,
+  maxAllowedBeforeBan: 3,
+});
 
   // ✅ Fetch logged-in user
  useEffect(() => {
@@ -43,6 +48,21 @@ const Dashboard = () => {
   };
   fetchUser();
 }, [navigate]);
+useEffect(() => {
+  const fetchReportStats = async () => {
+    if (!user) return;
+
+    try {
+      const res = await api.get("/report/my-stats");
+      setReportStats(res.data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch report stats");
+    }
+  };
+
+  fetchReportStats();
+}, [user]);
 
 
   // ✅ Fetch existing connections
@@ -150,56 +170,114 @@ const handleReject = async (senderId) => {
       {/* <Navbar /> */}
       <Container sx={{ mt: 6, pb: 6 }}>
         {/* ================= DASHBOARD SUMMARY ================= */}
-        {user && (
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} md={3}>
-              <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
-                <Typography variant="h6" sx={{ color: "#2e7d32" }}>
-                  👤 Profile
-                </Typography>
-                <Typography sx={{ mt: 1, fontWeight: 600 }}>
-                  {user.name}
-                </Typography>
-                <Typography sx={{ color: "gray", fontSize: "0.9rem" }}>
-                  {user.email}
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
-                <Typography variant="h6" sx={{ color: "#388e3c" }}>
-                  🧩 Skills Have
-                </Typography>
-                <Typography sx={{ mt: 1, fontWeight: 500 }}>
-                  {user.skillsHave?.join(", ") || "N/A"}
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
-                <Typography variant="h6" sx={{ color: "#388e3c" }}>
-                  🎯 Skills Want
-                </Typography>
-                <Typography sx={{ mt: 1, fontWeight: 500 }}>
-                  {user.skillsWant?.join(", ") || "N/A"}
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
-                <Typography variant="h6" sx={{ color: "#1b5e20" }}>
-                  🤝 Connections
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: "#2e7d32" }}>
-                  {connections.length}
-                </Typography>
-                <Typography sx={{ mt: 1, fontSize: "0.9rem", color: "gray" }}>
-                  Free Left: {user.freeConnectionLeft}
-                </Typography>
-              </Paper>
-            </Grid>
-          </Grid>
+       {user && (
+  <Grid container spacing={3} sx={{ mb: 4 }}>
+    {/* 👤 Profile */}
+    <Grid item xs={12} md={3}>
+      <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
+        <Typography variant="h6" sx={{ color: "#2e7d32" }}>
+          👤 Profile
+        </Typography>
+        <Typography sx={{ mt: 1, fontWeight: 600 }}>
+          {user.name}
+        </Typography>
+        <Typography sx={{ color: "gray", fontSize: "0.9rem" }}>
+          {user.email}
+        </Typography>
+      </Paper>
+    </Grid>
+
+    {/* 🧩 Skills Have */}
+    <Grid item xs={12} md={3}>
+      <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
+        <Typography variant="h6" sx={{ color: "#388e3c" }}>
+          🧩 Skills Have
+        </Typography>
+        <Typography sx={{ mt: 1, fontWeight: 500 }}>
+          {user.skillsHave?.join(", ") || "N/A"}
+        </Typography>
+      </Paper>
+    </Grid>
+
+    {/* 🎯 Skills Want */}
+    <Grid item xs={12} md={3}>
+      <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
+        <Typography variant="h6" sx={{ color: "#388e3c" }}>
+          🎯 Skills Want
+        </Typography>
+        <Typography sx={{ mt: 1, fontWeight: 500 }}>
+          {user.skillsWant?.join(", ") || "N/A"}
+        </Typography>
+      </Paper>
+    </Grid>
+
+    {/* 🤝 Connections – ONLY connections info */}
+    <Grid item xs={12} md={3}>
+      <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
+        <Typography variant="h6" sx={{ color: "#1b5e20" }}>
+          🤝 Connections
+        </Typography>
+        <Typography
+          variant="h5"
+          sx={{ fontWeight: 700, color: "#2e7d32" }}
+        >
+          {connections.length}
+        </Typography>
+        <Typography sx={{ mt: 1, fontSize: "0.9rem", color: "gray" }}>
+          Free Left: {user.freeConnectionLeft}
+        </Typography>
+      </Paper>
+    </Grid>
+
+    {/* 🚨 Reports – separate card */}
+    <Grid item xs={12} md={3}>
+      <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
+        <Typography variant="h6" sx={{ color: "#d32f2f" }}>
+          🚨 Reports
+        </Typography>
+
+        <Typography
+          variant="h5"
+          sx={{ fontWeight: 700, mt: 1 }}
+        >
+          {reportStats.reportCount}
+        </Typography>
+
+        <Typography sx={{ mt: 1, fontSize: "0.9rem", color: "gray" }}>
+          Reports on your account
+        </Typography>
+
+        {reportStats.reportCount >= 3 && !reportStats.isBanned && (
+          <Typography
+            sx={{
+              mt: 1.5,
+              fontSize: "0.8rem",
+              color: "#d32f2f",
+              fontWeight: 600,
+            }}
+          >
+            ⚠ Your account has multiple reports.
+            It may get banned soon if this continues.
+          </Typography>
         )}
+
+        {reportStats.isBanned && (
+          <Typography
+            sx={{
+              mt: 1.5,
+              fontSize: "0.8rem",
+              color: "#b71c1c",
+              fontWeight: 700,
+            }}
+          >
+            🚫 Your account is currently banned.
+          </Typography>
+        )}
+      </Paper>
+    </Grid>
+  </Grid>
+)}
+
 
         {/* ================= SUGGESTED CONNECTIONS ================= */}
         <Paper

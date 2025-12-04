@@ -48,3 +48,20 @@ exports.hasReportedUser = async (query, reportedUserId) => {
 
   return { hasReported: !!existing };
 };
+exports.getMyReportStats = async (userId) => {
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
+
+  const reportCount = await Report.countDocuments({
+    reportedUserId: userId,
+  });
+
+  const user = await User.findById(userId).select("isBanned");
+
+  return {
+    reportCount,
+    isBanned: user?.isBanned || false,
+    maxAllowedBeforeBan: 3, 
+  };
+};
