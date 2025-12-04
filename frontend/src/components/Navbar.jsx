@@ -29,7 +29,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useNotifications } from "../context/NotificationContext";
-
+import api from "../utils/api"
 const Navbar = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
@@ -61,12 +61,22 @@ const Navbar = () => {
   };
 
   // ✅ Centralized Logout Function
-  const handleLogout = () => {
+  const handleLogout = async () => {
+  try {
+    await api.post("/auth/logout"); // ✅ cookie auto-sent
+
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
     toast.success("Logged out successfully!");
     navigate("/login");
-  };
+  } catch (err) {
+    console.error("Logout failed:", err);
+    toast.error("Logout failed");
+  }
+};
+
+
 
   const notificationCount = Object.keys(meetingNotifications).length;
   const open = Boolean(notificationAnchorEl);

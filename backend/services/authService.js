@@ -58,3 +58,15 @@ exports.verifyUserEmail = async (userId, verificationCode) => {
 
   return "Email verified successfully!";
 };
+// services/auth.service.js
+
+exports.logoutUserService = (res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    sameSite: "lax",   // use "none" if cross-site with https
+    secure: false,    // true in production with HTTPS
+    path: "/",        // IMPORTANT
+  });
+
+  return true;
+};
