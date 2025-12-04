@@ -16,7 +16,7 @@ import MeetHome from "./pages/Meet";
 import MeetingRoom from "./pages/Meet/Room";
 import Chat from "./pages/Chat";
 import Subscription from "./pages/Subscription";
-
+import BannedPage from "./pages/BannedPage/BannedPage";
 axios.defaults.withCredentials = true;
 
 function App() {
@@ -77,7 +77,7 @@ function App() {
         <Route path="/login" element={<LoginForm setUser={setUser} />} />
 
         <Route path="/verify-email" element={<VerifyEmailPage />} />
-
+        <Route path="/banned" element={<BannedPage />} />
         <Route
           element={
             <PrivateRoute user={user}>

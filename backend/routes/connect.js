@@ -6,13 +6,13 @@ const { fetchSuggestions,
   requestStatus,
 fetchConnections } = require("../controllers/connectioncontroller");
 const authMiddleware = require("../middleware/authMiddleware");
-
+const checkBanned = require("../middleware/checkBanned");
 const router = express.Router();
 
-router.get("/suggestions", authMiddleware, fetchSuggestions);
-router.post("/request", authMiddleware, sendRequest);
-router.post("/accept", authMiddleware, acceptRequest);
-router.post("/reject", authMiddleware, rejectRequest);
-router.get("/status", authMiddleware, requestStatus);
-router.get("/connections", authMiddleware, fetchConnections);
+router.get("/suggestions", authMiddleware,checkBanned, fetchSuggestions);
+router.post("/request", authMiddleware,checkBanned, sendRequest);
+router.post("/accept", authMiddleware,checkBanned, acceptRequest);
+router.post("/reject", authMiddleware,checkBanned, rejectRequest);
+router.get("/status", authMiddleware,checkBanned, requestStatus);
+router.get("/connections", authMiddleware, checkBanned,fetchConnections);
 module.exports = router;

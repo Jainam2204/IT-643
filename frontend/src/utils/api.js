@@ -1,18 +1,23 @@
+// utils/api.js
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
 const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: true, // ✅ VERY IMPORTANT
+  baseURL: "http://localhost:3000",
+  withCredentials: true,
 });
 
-// ✅ No token interceptor needed anymore
-api.interceptors.request.use((config) => {
-  return config;
-});
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const code = error.response?.data?.code;
+
+    if (status === 403 && code === "USER_BANNED") {
+      window.location.href = "/banned";
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default api;
