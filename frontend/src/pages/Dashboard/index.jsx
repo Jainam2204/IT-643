@@ -15,7 +15,7 @@ import {
 
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../components/Navbar";
+// import Navbar from "../../components/Navbar";
 import api from "../../utils/api"
 
 const Dashboard = () => {
@@ -147,7 +147,7 @@ const handleReject = async (senderId) => {
 
   return (
     <Box sx={{ backgroundColor: "#f8faf8", minHeight: "100vh" }}>
-      <Navbar />
+      {/* <Navbar /> */}
       <Container sx={{ mt: 6, pb: 6 }}>
         {/* ================= DASHBOARD SUMMARY ================= */}
         {user && (

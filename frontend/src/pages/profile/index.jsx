@@ -19,7 +19,7 @@ import { motion } from "framer-motion";
 import api from "../../utils/api"
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../components/Navbar";
+// import Navbar from "../../components/Navbar";
 import { BadgeCheck, Users, Code, Target, PencilLine } from "lucide-react";
 
 export default function Profile() {
@@ -94,7 +94,7 @@ const handleUpdateProfile = async () => {
 
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
       <Container sx={{ mt: 12, mb: 8, display: "flex", justifyContent: "center" }}>
         <motion.div
           initial={{ opacity: 0, y: 40 }}

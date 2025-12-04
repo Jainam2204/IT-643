@@ -257,7 +257,7 @@ import {
 import { toast } from "react-toastify";
 
 import api from "../../utils/api";
-import Navbar from "../../components/Navbar";
+// import Navbar from "../../components/Navbar";
 import ReportUserDialog from "../../components/ReportDialog"; // adjust name/path if needed
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../../context/NotificationContext";
@@ -371,7 +371,7 @@ const Connections = () => {
 
   return (
     <Box sx={{ backgroundColor: "#f8faf8", minHeight: "100vh" }}>
-      <Navbar />
+      {/* //<Navbar /> */}
       <Container sx={{ mt: 6, pb: 6 }}>
         <Paper
           elevation={5}
