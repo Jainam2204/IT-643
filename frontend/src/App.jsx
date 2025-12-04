@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import axios from "axios";
+
 import SignupForm from "./pages/SignupForm";
 import LoginForm from "./pages/login";
 import VerifyEmailPage from "./pages/VerifyPage";
@@ -15,28 +17,36 @@ import MeetingRoom from "./pages/Meet/Room";
 import Chat from "./pages/Chat";
 import Subscription from "./pages/Subscription";
 
+axios.defaults.withCredentials = true;
+
 function App() {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
-
-    if (token && userData) {
+    const fetchCurrentUser = async () => {
       try {
-        setUser(JSON.parse(userData));
+        const res = await axios.get("http://localhost:3000/auth/me");
+        console.log("Fetched current user:", res.data);
+        setUser(res.data);
       } catch (err) {
-        console.error("Failed to parse user from localStorage", err);
-        localStorage.removeItem("user");
+        console.log("User not logged in", err);
+        setUser(null);
+      } finally {
+        setLoadingUser(false);
       }
-    }
-    setLoadingUser(false);
+    };
+
+    fetchCurrentUser();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    try {
+      await axios.post("http://localhost:3000/auth/logout");
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+
     setUser(null);
     window.location.href = "/login";
   };
@@ -70,7 +80,7 @@ function App() {
 
         <Route
           element={
-            <PrivateRoute>
+            <PrivateRoute user={user}>
               <Layout onLogout={handleLogout} />
             </PrivateRoute>
           }
@@ -82,7 +92,6 @@ function App() {
           <Route path="/meet/:id" element={<MeetingRoom />} />
           <Route path="/chat" element={<Chat user={user} setUser={setUser} />} />
           <Route path="/subscription" element={<Subscription />} />
-
         </Route>
       </Routes>
     </Router>
