@@ -14,7 +14,7 @@ function Chat({ user, setUser }) {
 
 useEffect(() => {
   const newSocket = io('http://localhost:3000', {
-    withCredentials: true,          // 👈 let browser send cookies
+    withCredentials: true,
     transports: ['websocket'],
   });
 
