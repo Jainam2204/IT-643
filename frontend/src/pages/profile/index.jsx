@@ -16,7 +16,7 @@ import {
   TextField,
 } from "@mui/material";
 import { motion } from "framer-motion";
-import axios from "axios";
+import api from "../../utils/api"
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
@@ -30,59 +30,49 @@ export default function Profile() {
   const [formData, setFormData] = useState({ name: "", skillsHave: "", skillsWant: "" });
 
   // Fetch current user
-  useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        toast.error("You must be logged in");
-        navigate("/login");
-        return;
-      }
-
-      try {
-        const res = await axios.get("http://localhost:3000/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(res.data);
-        setFormData({
-          name: res.data.name || "",
-          skillsHave: res.data.skillsHave?.join(", ") || "",
-          skillsWant: res.data.skillsWant?.join(", ") || "",
-        });
-      } catch (err) {
-        toast.error(err.response?.data?.message || "Failed to fetch user data");
-        navigate("/login");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, [navigate]);
-
-  // Handle profile update
-  const handleUpdateProfile = async () => {
-    const token = localStorage.getItem("token");
-    if (!user?._id) return;
-
+ useEffect(() => {
+  const fetchUser = async () => {
     try {
-      const res = await axios.put(
-        `http://localhost:3000/user/update-profile/${user._id}`,
-        {
-          name: formData.name,
-          skillsHave: formData.skillsHave.split(",").map((s) => s.trim()),
-          skillsWant: formData.skillsWant.split(",").map((s) => s.trim()),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      toast.success("Profile updated successfully!");
+      const res = await api.get("/auth/me"); // 👈 cookie is sent automatically
       setUser(res.data);
-      setOpenEdit(false);
+      setFormData({
+        name: res.data.name || "",
+        skillsHave: res.data.skillsHave?.join(", ") || "",
+        skillsWant: res.data.skillsWant?.join(", ") || "",
+      });
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update profile");
+      toast.error(err.response?.data?.message || "Failed to fetch user data");
+      navigate("/login");
+    } finally {
+      setLoading(false);
     }
   };
+  fetchUser();
+}, [navigate]);
+
+
+  // Handle profile update
+const handleUpdateProfile = async () => {
+  if (!user?._id) return;
+
+  try {
+    const res = await api.put(
+      `/user/update-profile/${user._id}`,
+      {
+        name: formData.name,
+        skillsHave: formData.skillsHave.split(",").map((s) => s.trim()),
+        skillsWant: formData.skillsWant.split(",").map((s) => s.trim()),
+      }
+    );
+
+    toast.success("Profile updated successfully!");
+    setUser(res.data);
+    setOpenEdit(false);
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed to update profile");
+  }
+};
+
 
   if (loading) {
     return (

@@ -149,6 +149,16 @@ const userIdToSocketIds = new Map();
 const socketIdToUserId = new Map();
 const roomIdToSocketIds = new Map();
 
+// Helper function to parse cookies from cookie header
+function parseCookies(cookieHeader) {
+  if (!cookieHeader) return {};
+  return cookieHeader.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    if (key && value) acc[key] = decodeURIComponent(value);
+    return acc;
+  }, {});
+}
+
 function notifyUserLeftRoom(io, roomId, socketId) {
   const sockets = roomIdToSocketIds.get(roomId);
   if (!sockets) return;
@@ -218,7 +228,13 @@ function leaveRoom(socket, roomId) {
 // IMPORTANT: now takes `io`, does NOT create its own Server
 function initRealtime(io) {
   io.on("connection", (socket) => {
-    const { token } = socket.handshake.query || {};
+    // Parse cookies from handshake headers
+    const cookieHeader = socket.handshake.headers.cookie;
+    const cookies = parseCookies(cookieHeader);
+    
+    // Try to get token from cookie first, then fallback to query
+    const token = cookies.authToken || socket.handshake.query?.token;
+    
     let userId = null;
     try {
       if (token) {

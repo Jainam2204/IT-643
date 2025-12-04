@@ -12,10 +12,11 @@ import {
   Divider,
   Stack,
 } from "@mui/material";
-import axios from "axios";
+
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
+import api from "../../utils/api"
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -26,148 +27,116 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   // ✅ Fetch logged-in user
-  useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("You must be logged in");
-        navigate("/login");
-        return;
-      }
+ useEffect(() => {
+  const fetchUser = async () => {
+    try {
+      const res = await api.get("/auth/me"); // 👈 cookie-based
+      setUser(res.data);
+      localStorage.setItem("user", JSON.stringify(res.data)); // optional, for PrivateRoute
+    } catch (err) {
+      console.error(err);
+      toast.error("You must be logged in");
+      navigate("/login");
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchUser();
+}, [navigate]);
 
-      try {
-        const res = await axios.get("http://localhost:3000/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(res.data);
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to fetch user data");
-        navigate("/login");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, [navigate]);
 
   // ✅ Fetch existing connections
-  useEffect(() => {
-    const fetchConnections = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      try {
-        const res = await axios.get("http://localhost:3000/connect/connections", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setConnections(res.data.data || []);
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to fetch connections");
-      }
-    };
-    if (user) fetchConnections();
-  }, [user]);
+useEffect(() => {
+  const fetchConnections = async () => {
+    try {
+      const res = await api.get("/connect/connections");
+      setConnections(res.data.data || []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch connections");
+    }
+  };
+  if (user) fetchConnections();
+}, [user]);
+
 
   // ✅ Fetch connection suggestions
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (!user) return;
-      const token = localStorage.getItem("token");
+useEffect(() => {
+  const fetchSuggestions = async () => {
+    if (!user) return;
 
-      try {
-        const res = await axios.get(
-          "http://localhost:3000/connect/suggestions",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        const filtered = res.data.filter((s) => s.status !== "accepted");
-        setSuggestions(filtered);
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to fetch connection suggestions");
-      }
-    };
-    fetchSuggestions();
-  }, [user]);
+    try {
+      const res = await api.get("/connect/suggestions");
+      const filtered = res.data.filter((s) => s.status !== "accepted");
+      setSuggestions(filtered);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch connection suggestions");
+    }
+  };
+  fetchSuggestions();
+}, [user]);
 
   // ✅ Fetch statuses
-  useEffect(() => {
-    const fetchStatuses = async () => {
-      if (!suggestions.length) return;
-      const token = localStorage.getItem("token");
-      const newStatuses = {};
+useEffect(() => {
+  const fetchStatuses = async () => {
+    if (!suggestions.length || !user) return;
+    const newStatuses = {};
 
-      await Promise.all(
-        suggestions.map(async (s) => {
-          try {
-            const res = await axios.get("http://localhost:3000/connect/status", {
-              headers: { Authorization: `Bearer ${token}` },
-              params: { senderId: user._id, receiverId: s._id },
-            });
-            newStatuses[s._id] = res.data.status;
-          } catch {
-            newStatuses[s._id] = "none";
-          }
-        })
-      );
+    await Promise.all(
+      suggestions.map(async (s) => {
+        try {
+          const res = await api.get("/connect/status", {
+            params: { senderId: user._id, receiverId: s._id },
+          });
+          newStatuses[s._id] = res.data.status;
+        } catch {
+          newStatuses[s._id] = "none";
+        }
+      })
+    );
 
-      setStatuses(newStatuses);
-    };
-
-    if (user && suggestions.length) fetchStatuses();
-  }, [suggestions, user]);
-
-  // ✅ Handlers
-  const handleConnect = async (receiverId) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        "http://localhost:3000/connect/request",
-        { receiverId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success("Connection request sent!");
-      setStatuses((prev) => ({ ...prev, [receiverId]: "pending" }));
-    } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || "Failed to send request");
-    }
+    setStatuses(newStatuses);
   };
 
-  const handleAccept = async (senderId) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        "http://localhost:3000/connect/accept",
-        { senderId, receiverId: user._id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success("You’re now connected!");
-      setSuggestions((prev) => prev.filter((s) => s._id !== senderId));
-      setStatuses((prev) => ({ ...prev, [senderId]: "accepted" }));
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to accept request");
-    }
-  };
+  fetchStatuses();
+}, [suggestions, user]);
 
-  const handleReject = async (senderId) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        "http://localhost:3000/connect/reject",
-        { senderId, receiverId: user._id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.info("Connection request rejected!");
-      setStatuses((prev) => ({ ...prev, [senderId]: "none" }));
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to reject request");
-    }
-  };
+
+ const handleConnect = async (receiverId) => {
+  try {
+    await api.post("/connect/request", { receiverId });
+    toast.success("Connection request sent!");
+    setStatuses((prev) => ({ ...prev, [receiverId]: "pending" }));
+  } catch (err) {
+    console.error(err);
+    toast.error(err.response?.data?.message || "Failed to send request");
+  }
+};
+
+const handleAccept = async (senderId) => {
+  try {
+    await api.post("/connect/accept", { senderId, receiverId: user._id });
+    toast.success("You’re now connected!");
+    setSuggestions((prev) => prev.filter((s) => s._id !== senderId));
+    setStatuses((prev) => ({ ...prev, [senderId]: "accepted" }));
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to accept request");
+  }
+};
+
+const handleReject = async (senderId) => {
+  try {
+    await api.post("/connect/reject", { senderId, receiverId: user._id });
+    toast.info("Connection request rejected!");
+    setStatuses((prev) => ({ ...prev, [senderId]: "none" }));
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to reject request");
+  }
+};
+
 
   if (loading)
     return (

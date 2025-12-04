@@ -6,10 +6,10 @@ export const MeetNotificationListener = () => {
   const { addMeetingNotification, removeMeetingNotification } = useNotifications();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+     const userData = localStorage.getItem("user");
+  if (!userData) return;
 
-    const socket = getSocket(token);
+  const socket = getSocket();
 
     socket.on("meet-started", (data) => {
       addMeetingNotification(data);

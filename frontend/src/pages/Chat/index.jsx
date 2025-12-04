@@ -12,28 +12,28 @@ function Chat({ user, setUser }) {
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [usersError, setUsersError] = useState(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const newSocket = io('http://localhost:3000', {
-      auth: { token },
-      transports: ['websocket'],
-    });
+useEffect(() => {
+  const newSocket = io('http://localhost:3000', {
+    withCredentials: true,          // 👈 let browser send cookies
+    transports: ['websocket'],
+  });
 
-    newSocket.on('connect', () => {
-      console.log('Socket connected');
-    });
+  newSocket.on('connect', () => {
+    console.log('Socket connected');
+  });
 
-    newSocket.on('disconnect', () => {
-      console.log('Socket disconnected');
-    });
+  newSocket.on('disconnect', () => {
+    console.log('Socket disconnected');
+  });
 
-    setSocket(newSocket);
-    fetchUsers();
+  setSocket(newSocket);
+  fetchUsers();
 
-    return () => {
-      newSocket.close();
-    };
-  }, []);
+  return () => {
+    newSocket.close();
+  };
+}, []);
+
 
   const fetchUsers = async () => {
     try {
@@ -59,19 +59,19 @@ function Chat({ user, setUser }) {
     } catch (error) {
       console.error('Error fetching users:', error);
       if (error.response) {
-        if (error.response.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
-          window.location.href = '/login';
-        } else {
-          setUsersError(
-            `Error: ${
-              error.response.data?.message || 'Failed to fetch users'
-            }`
-          );
-        }
-      } else if (error.request) {
+  if (error.response.status === 401) {
+    localStorage.removeItem('user'); // no token anymore
+    setUser(null);
+    window.location.href = '/login';
+  } else {
+    setUsersError(
+      `Error: ${
+        error.response.data?.message || 'Failed to fetch users'
+      }`
+    );
+  }
+}
+else if (error.request) {
         setUsersError(
           'Cannot connect to server. Please check if the backend is running.'
         );

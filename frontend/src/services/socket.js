@@ -63,15 +63,15 @@ let socket = null;
  * KEEP THIS FUNCTION EXACT (per your request).
  * If socket already exists, returns it. Otherwise creates a socket using query token.
  */
-export function getSocket(token) {
-  if (socket) return socket;
-  socket = io("http://localhost:3000", {
-    transports: ["websocket"],
-    query: { token },
-    autoConnect: true,
-  });
+export const getSocket = () => {
+  if (!socket) {
+    socket = io("http://localhost:3000", {
+      withCredentials: true,      // 👈 send cookies with WS handshake
+      transports: ["websocket"],
+    });
+  }
   return socket;
-}
+};
 
 /**
  * Initialize socket with auth in `auth` (preferred) and optional join.
@@ -79,37 +79,41 @@ export function getSocket(token) {
  * This function can be used instead of getSocket(token) when you want `auth` field
  * and to emit a 'join' after connect.
  */
-export function initSocket(token, userId) {
+export function initSocket(userId) {
   // If socket already exists and connected, reuse and ensure join emitted
   if (socket && socket.connected) {
-    if (userId) socket.emit('join', userId);
+    if (userId) socket.emit("join", userId);
     return socket;
   }
 
-  // Create socket using auth (handshake.auth)
-  socket = io('http://localhost:3000', {
-    auth: token ? { token } : undefined,
-    transports: ['websocket'],
+  // Cookie-based socket connection
+  socket = io("http://localhost:3000", {
+    withCredentials: true,        // 👈 send JWT cookie
+    transports: ["websocket"],
     autoConnect: true,
     reconnectionAttempts: 5,
   });
 
-  socket.on('connect', () => {
+  socket.on("connect", () => {
     if (userId) {
-      socket.emit('join', userId);
+      socket.emit("join", userId);
     }
   });
 
-  socket.on('connect_error', (err) => {
-    console.error('Socket connect_error:', err && err.message ? err.message : err);
+  socket.on("connect_error", (err) => {
+    console.error(
+      "Socket connect_error:",
+      err && err.message ? err.message : err
+    );
   });
 
-  socket.on('disconnect', (reason) => {
-    console.log('Socket disconnected:', reason);
+  socket.on("disconnect", (reason) => {
+    console.log("Socket disconnected:", reason);
   });
 
   return socket;
 }
+
 
 /**
  * Returns the current socket instance (no creation). Named differently to avoid

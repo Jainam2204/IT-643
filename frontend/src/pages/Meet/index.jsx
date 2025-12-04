@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Box, Button, Container, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../utils/api";
 import { toast } from "react-toastify";
 
 const extractMeetingId = (input) => {
@@ -23,60 +23,59 @@ export default function MeetHome() {
   const [joinValue, setJoinValue] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const token = localStorage.getItem("token");
 
-  const startMeeting = async () => {
-    if (!token) {
-      toast.error("Please log in to start a meeting");
-      navigate("/login");
-      return;
-    }
-    try {
-      setLoading(true);
-      const res = await axios.post(
-        "http://localhost:3000/meetings",
-        { title: "" },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const meetingId = res.data?.meetingId;
-      if (!meetingId) {
-        throw new Error("Invalid response from server");
-      }
-      navigate(`/meet/${meetingId}`);
-    } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || "Failed to start meeting");
-    } finally {
-      setLoading(false);
-    }
-  };
+const startMeeting = async () => {
+  const userData = localStorage.getItem("user");
+  if (!userData) {
+    toast.error("Please log in to start a meeting");
+    navigate("/login");
+    return;
+  }
 
-  const joinMeeting = async () => {
-    const id = extractMeetingId(joinValue);
-    if (!id) {
-      toast.error("Please enter a valid meeting link or ID");
-      return;
+  try {
+    setLoading(true);
+    const res = await api.post("/meetings", { title: "" }); // cookie sent automatically
+
+    const meetingId = res.data?.meetingId;
+    if (!meetingId) {
+      throw new Error("Invalid response from server");
     }
-    if (!token) {
-      toast.error("Please log in to join a meeting");
-      navigate("/login");
-      return;
-    }
-    try {
-      setLoading(true);
-      await axios.get(`http://localhost:3000/meetings/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      navigate(`/meet/${id}`);
-    } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || "Meeting not found");
-    } finally {
-      setLoading(false);
-    }
-  };
+    navigate(`/meet/${meetingId}`);
+  } catch (err) {
+    console.error(err);
+    toast.error(err.response?.data?.message || "Failed to start meeting");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+const joinMeeting = async () => {
+  const id = extractMeetingId(joinValue);
+  if (!id) {
+    toast.error("Please enter a valid meeting link or ID");
+    return;
+  }
+
+  const userData = localStorage.getItem("user");
+  if (!userData) {
+    toast.error("Please log in to join a meeting");
+    navigate("/login");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    await api.get(`/meetings/${id}`); // cookie handles auth
+    navigate(`/meet/${id}`);
+  } catch (err) {
+    console.error(err);
+    toast.error(err.response?.data?.message || "Meeting not found");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <Box
