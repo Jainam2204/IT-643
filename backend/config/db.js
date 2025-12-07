@@ -7,8 +7,6 @@ dotenv.config();
 const connectDB = async () => {
   try {
     const options = {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       maxPoolSize: process.env.NODE_ENV === 'production' ? 10 : 5, // Connection pool size
       minPoolSize: process.env.NODE_ENV === 'production' ? 5 : 2,
       serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s

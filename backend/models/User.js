@@ -31,7 +31,7 @@ function skillLimit(val) {
 }
 
 // Indexes for common queries
-UserSchema.index({ email: 1 }); // Already unique, but explicit for performance
+// Note: email index is automatically created by unique: true, so we don't need to add it explicitly
 UserSchema.index({ isVerified: 1 });
 UserSchema.index({ isBanned: 1 });
 UserSchema.index({ createdAt: -1 });
