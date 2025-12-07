@@ -18,6 +18,12 @@ const envSchema = Joi.object({
   INR_TO_USD_RATE: Joi.number().optional().default(82).description('INR to USD conversion rate'),
   CLIENT_URL: Joi.string().uri().optional().description('Base URL for file serving'),
   LOG_LEVEL: Joi.string().valid('error', 'warn', 'info', 'debug').optional().description('Logging level'),
+  // Email configuration - required for email functionality (Brevo/Sendinblue)
+  EMAIL_HOST: Joi.string().required().description('SMTP server host (e.g., smtp-relay.brevo.com)'),
+  EMAIL_PORT: Joi.alternatives().try(Joi.string(), Joi.number()).required().description('SMTP server port (587 for STARTTLS, 465 for SSL)'),
+  EMAIL_USER: Joi.string().required().description('SMTP authentication username (your Brevo SMTP login)'),
+  EMAIL_PASS: Joi.string().required().description('SMTP authentication password (your Brevo SMTP key)'),
+  EMAIL_FROM: Joi.string().email().required().description('Email sender address (must be verified in Brevo)'),
 }).unknown();
 
 const validateEnv = () => {
