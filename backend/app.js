@@ -44,7 +44,7 @@ app.use(compression());
 const allowedOrigins = [
   process.env.CLIENT_URL,
   process.env.FRONTEND_URL,
-  process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : null,
+  process.env.NODE_ENV === 'development' ? process.env.CLIENT_URL : null,
 ].filter(Boolean);
 
 app.use(

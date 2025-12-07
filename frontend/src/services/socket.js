@@ -65,7 +65,7 @@ let socket = null;
  */
 export const getSocket = () => {
   if (!socket) {
-    socket = io("http://localhost:3000", {
+    socket = io(import.meta.env.VITE_API_URL, {
       withCredentials: true,      // 👈 send cookies with WS handshake
       transports: ["websocket"],
     });
@@ -87,7 +87,7 @@ export function initSocket(userId) {
   }
 
   // Cookie-based socket connection
-  socket = io("http://localhost:3000", {
+  socket = io(import.meta.env.VITE_API_URL, {
     withCredentials: true,        // 👈 send JWT cookie
     transports: ["websocket"],
     autoConnect: true,

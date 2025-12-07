@@ -20,7 +20,7 @@ const uploadToLocalStorage = (buffer, filename) => {
 
       fs.writeFileSync(filePath, buffer);
 
-      const baseUrl = process.env.BASE_URL || 'http://localhost:5173';
+      const baseUrl = process.env.CLIENT_URL || 'http://localhost:5173';
       const fileUrl = `${baseUrl}/uploads/chat/${timestamp}-${sanitizedFilename}`;
       
       logger.info('File saved locally:', { filePath, fileUrl });

@@ -18,7 +18,7 @@ const envSchema = Joi.object({
   RAZORPAY_KEY_SECRET: Joi.string().optional().allow('').description('Razorpay key secret'),
   RAZORPAY_CURRENCY: Joi.string().optional().default('INR').description('Razorpay currency'),
   INR_TO_USD_RATE: Joi.number().optional().default(82).description('INR to USD conversion rate'),
-  BASE_URL: Joi.string().uri().optional().description('Base URL for file serving'),
+  CLIENT_URL: Joi.string().uri().optional().description('Base URL for file serving'),
   LOG_LEVEL: Joi.string().valid('error', 'warn', 'info', 'debug').optional().description('Logging level'),
 }).unknown();
 
