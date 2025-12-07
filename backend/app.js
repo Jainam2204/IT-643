@@ -88,7 +88,7 @@ app.get("/health", (req, res) => {
 });
 
 app.get("/", (req, res) => res.json({ message: "API is Running", version: "1.0.0" }));
-
+app.set("trust proxy", 1);
 // Apply auth rate limiter to authentication routes
 app.use("/auth", authLimiter);
 app.use("/auth", authRoutes);
