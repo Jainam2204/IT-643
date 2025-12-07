@@ -10,7 +10,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PrivateRoute from "./components/Privateroutes";
 import Dashboard from "./pages/Dashboard";
-import Layout from "./components/Layout";
+import Layout from "./components/layout";
 import Profile from "./pages/profile";
 import Connections from "./pages/connections";
 import MeetHome from "./pages/Meet";
