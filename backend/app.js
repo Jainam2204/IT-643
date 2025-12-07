@@ -40,52 +40,41 @@ app.use(
 // Gzip compression
 app.use(compression());
 
-// // CORS configuration
-// const allowedOrigins = [
-//   process.env.CLIENT_URL,
-//   process.env.FRONTEND_URL,
-//   process.env.NODE_ENV === 'development' ? process.env.CLIENT_URL : null,
-// ].filter(Boolean);
-
-// app.use(
-//   cors({
-//     origin: function (origin, callback) {
-//       // Allow requests with no origin (like mobile apps or curl requests)
-//       if (!origin) return callback(null, true);
-      
-//       if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
-//         callback(null, true);
-//       } else {
-//         logger.warn(`CORS blocked origin: ${origin}`);
-//         callback(new Error('Not allowed by CORS'));
-//       }
-//     },
-//     credentials: true,
-//     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-//     allowedHeaders: ['Content-Type', 'Authorization'],
-//   })
-// );
-
+// CORS configuration
 const allowedOrigins = [
   "http://localhost:5173",      // dev frontend
   process.env.CLIENT_URL,       // prod frontend (from env)
+  process.env.FRONTEND_URL,     // alternative frontend URL
 ].filter(Boolean);
+
+// Normalize origins (remove trailing slashes and convert to lowercase for comparison)
+const normalizedOrigins = allowedOrigins.map(origin => origin.replace(/\/$/, '').toLowerCase());
+
+// Log allowed origins on startup for debugging
+logger.info(`CORS configuration - Allowed origins: ${normalizedOrigins.join(', ')}`);
 
 app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true); // curl, Postman, etc.
 
-      if (allowedOrigins.includes(origin)) {
+      // Normalize the incoming origin (remove trailing slash, lowercase)
+      const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
+
+      if (normalizedOrigins.includes(normalizedOrigin)) {
+        logger.info(`CORS allowed: ${origin}`);
         return callback(null, true);
       }
 
       logger.warn(`CORS blocked origin: ${origin}`);
+      logger.warn(`Normalized blocked origin: ${normalizedOrigin}`);
+      logger.warn(`Allowed normalized origins: ${normalizedOrigins.join(', ')}`);
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+    exposedHeaders: ["Set-Cookie"],
   })
 );
 
@@ -128,14 +117,27 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Global error handler
+// Global error handler - MUST include CORS headers in error responses
 app.use((err, req, res, next) => {
+  // Add CORS headers to error responses
+  const origin = req.headers.origin;
+  if (origin) {
+    const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
+    if (normalizedOrigins.includes(normalizedOrigin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+    }
+  }
+
   logger.error('Unhandled error:', {
     error: err.message,
     stack: err.stack,
     url: req.url,
     method: req.method,
     ip: req.ip,
+    origin: origin,
   });
 
   // Don't leak error details in production
