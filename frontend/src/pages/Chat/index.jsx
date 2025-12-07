@@ -13,7 +13,7 @@ function Chat({ user, setUser }) {
   const [usersError, setUsersError] = useState(null);
 
 useEffect(() => {
-  const newSocket = io('http://localhost:3000', {
+  const newSocket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000', {
     withCredentials: true,
     transports: ['websocket'],
   });

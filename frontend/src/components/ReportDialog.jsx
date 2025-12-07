@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import api from "../utils/api";
 import { toast } from "react-toastify";
 import {
   Dialog,
@@ -43,19 +43,11 @@ function ReportUserDialog({
         return;
       }
 
-      const token = localStorage.getItem("token");
-
-      const res = await axios.post(
-        "http://localhost:3000/report",
-        {
-          reporterId,
-          reportedUserId,
-          reason,
-        },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
+      const res = await api.post("/report", {
+        reporterId,
+        reportedUserId,
+        reason,
+      });
 
       if (res.status === 200) {
         toast.success("Report submitted successfully!");

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import { Box, CircularProgress, Typography } from "@mui/material";
+import api from "./utils/api";
 
 import SignupForm from "./pages/SignupForm";
 import LoginForm from "./pages/login";
@@ -17,7 +18,6 @@ import MeetingRoom from "./pages/Meet/Room";
 import Chat from "./pages/Chat";
 import Subscription from "./pages/Subscription";
 import BannedPage from "./pages/BannedPage/BannedPage";
-axios.defaults.withCredentials = true;
 
 function App() {
   const [user, setUser] = useState(null);
@@ -26,11 +26,9 @@ function App() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/auth/me");
-        console.log("Fetched current user:", res.data);
+        const res = await api.get("/auth/me");
         setUser(res.data);
       } catch (err) {
-        console.log("User not logged in", err);
         setUser(null);
       } finally {
         setLoadingUser(false);
@@ -42,9 +40,9 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:3000/auth/logout");
+      await api.post("/auth/logout");
     } catch (err) {
-      console.error("Logout error:", err);
+      // Silent fail on logout
     }
 
     setUser(null);
@@ -53,16 +51,35 @@ function App() {
 
   if (loadingUser) {
     return (
-      <div
-        style={{
+      <Box
+        sx={{
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           height: "100vh",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         }}
       >
-        <div>Loading...</div>
-      </div>
+        <CircularProgress 
+          size={60} 
+          thickness={4}
+          sx={{ 
+            color: 'white',
+            mb: 2
+          }} 
+        />
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            color: 'white',
+            fontWeight: 600,
+            letterSpacing: 1
+          }}
+        >
+          Loading...
+        </Typography>
+      </Box>
     );
   }
 

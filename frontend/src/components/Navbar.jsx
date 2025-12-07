@@ -86,8 +86,9 @@ const Navbar = () => {
       <AppBar
         position="fixed"
         sx={{
-          backgroundColor: "#30187dff",
-          boxShadow: "0px 4px 10px rgba(0,0,0,0.25)",
+          background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+          boxShadow: "0px 8px 32px rgba(99, 102, 241, 0.3)",
+          backdropFilter: "blur(10px)",
         }}
       >
         <Toolbar
@@ -120,7 +121,7 @@ const Navbar = () => {
                   letterSpacing: "0.5px",
                 }}
               >
-                <Box component="span" sx={{ color: "#7e78d6ff" }}>
+                <Box component="span" sx={{ color: "#fbbf24" }}>
                   Skill
                 </Box>
                 Xchange
@@ -201,15 +202,16 @@ const Navbar = () => {
                   onClick={handleLogout}
                   startIcon={<LogoutIcon />}
                   sx={{
-                    color: "#114b2d",
-                    backgroundColor: "white",
+                    color: "white",
+                    backgroundColor: alpha("#fff", 0.2),
                     fontWeight: "600",
                     borderRadius: "20px",
                     textTransform: "none",
                     px: 2.5,
                     py: 0.7,
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
                     "&:hover": {
-                      backgroundColor: "#c8ffdf",
+                      backgroundColor: alpha("#fff", 0.3),
                     },
                   }}
                 >

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Box, Button, TextField, Typography, Container, Paper } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../utils/api";
 import { toast } from "react-toastify";
 
 export default function VerifyEmailPage() {
@@ -17,7 +17,7 @@ export default function VerifyEmailPage() {
 
   const handleVerify = async () => {
     try {
-      await axios.post("http://localhost:3000/auth/verify", {
+      await api.post("/auth/verify", {
         userId,
         verificationCode: code,
       });
@@ -25,7 +25,6 @@ export default function VerifyEmailPage() {
       toast.success("Email verified! You can now login.");
       navigate("/login");
     } catch (err) {
-      console.error(err);
       toast.error(err.response?.data?.message || "Verification failed");
       navigate("/signup");
     }

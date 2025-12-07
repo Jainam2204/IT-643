@@ -4,6 +4,7 @@ const streamifier = require("streamifier");
 const fs = require("fs");
 const path = require("path");
 const axios = require('axios');
+const logger = require("../utils/logger");
 
 const uploadToLocalStorage = (buffer, filename) => {
   return new Promise((resolve, reject) => {
@@ -22,14 +23,13 @@ const uploadToLocalStorage = (buffer, filename) => {
       const baseUrl = process.env.BASE_URL || 'http://localhost:5173';
       const fileUrl = `${baseUrl}/uploads/chat/${timestamp}-${sanitizedFilename}`;
       
-      console.log('File saved locally:', filePath);
-      console.log('File accessible at:', fileUrl);
+      logger.info('File saved locally:', { filePath, fileUrl });
       resolve({
         secure_url: fileUrl,
         public_id: `${timestamp}-${sanitizedFilename}`
       });
     } catch (error) {
-      console.error('Local file storage error:', error);
+      logger.error('Local file storage error:', { error: error.message, stack: error.stack });
       reject(new Error(`Failed to save file locally: ${error.message}`));
     }
   });
@@ -43,7 +43,7 @@ const uploadBufferToCloudinary = (buffer, filename) => {
       process.env.CLOUDINARY_SECRET_KEY;
 
     if (!isCloudinaryConfigured) {
-      console.log('Cloudinary not configured, using local file storage');
+      logger.info('Cloudinary not configured, using local file storage');
       return uploadToLocalStorage(buffer, filename)
         .then(resolve)
         .catch(reject);
@@ -62,30 +62,30 @@ const uploadBufferToCloudinary = (buffer, filename) => {
       uploadOptions.resource_type = "raw";
     }
 
-    console.log('Uploading to Cloudinary:', filename, 'Options:', uploadOptions);
+    logger.info('Uploading to Cloudinary:', { filename, options: uploadOptions });
 
     try {
       const stream = cloudinary.uploader.upload_stream(
         uploadOptions,
         (error, result) => {
           if (error) {
-            console.error('Cloudinary upload error:', error);
-            console.error('Error details:', {
+            logger.error('Cloudinary upload error:', {
               message: error.message,
               http_code: error.http_code,
-              name: error.name
+              name: error.name,
+              stack: error.stack
             });
             return reject(new Error(`File upload failed: ${error.message || 'Unknown error'}`));
           }
           if (!result || !result.secure_url) {
-            console.error('Cloudinary upload returned invalid result:', result);
+            logger.error('Cloudinary upload returned invalid result:', { result });
             return reject(new Error('File upload failed: Invalid response from upload service'));
           }
-          console.log('File uploaded successfully:', result.secure_url);
+          logger.info('File uploaded successfully:', { url: result.secure_url });
 
           axios.head(result.secure_url, { timeout: 5000 })
             .then((resp) => {
-              console.log('Uploaded file headers:', {
+              logger.debug('Uploaded file headers:', {
                 url: result.secure_url,
                 status: resp.status,
                 contentType: resp.headers['content-type'],
@@ -94,7 +94,7 @@ const uploadBufferToCloudinary = (buffer, filename) => {
               resolve(result);
             })
             .catch((headErr) => {
-              console.warn('Could not fetch uploaded file headers:', headErr.message);
+              logger.warn('Could not fetch uploaded file headers:', { error: headErr.message });
               resolve(result);
             });
         }
@@ -102,7 +102,7 @@ const uploadBufferToCloudinary = (buffer, filename) => {
 
       streamifier.createReadStream(buffer).pipe(stream);
     } catch (err) {
-      console.error('Error creating upload stream:', err);
+      logger.error('Error creating upload stream:', { error: err.message, stack: err.stack });
       reject(new Error(`File upload failed: ${err.message}`));
     }
   });
@@ -141,7 +141,7 @@ exports.createMessage = async (
 
   if (fileData) {
     try {
-      console.log('Starting file upload for:', fileData.originalname);
+      logger.info('Starting file upload for:', { filename: fileData.originalname });
       const upload = await uploadBufferToCloudinary(
         fileData.buffer,
         fileData.originalname
@@ -154,9 +154,9 @@ exports.createMessage = async (
       messageData.fileUrl = upload.secure_url;
       messageData.fileName = fileData.originalname;
       messageData.content = content || fileData.originalname;
-      console.log('File upload successful, URL:', upload.secure_url);
+      logger.info('File upload successful:', { url: upload.secure_url });
     } catch (uploadError) {
-      console.error('File upload error in createMessage:', uploadError);
+      logger.error('File upload error in createMessage:', { error: uploadError.message, stack: uploadError.stack });
       throw new Error(`Failed to upload file: ${uploadError.message}`);
     }
   } else {
@@ -209,7 +209,7 @@ exports.downloadFileByMessageId = async (messageId) => {
       contentType = 'text/plain';
     }
 
-    console.log('Fetched file from Cloudinary:', {
+    logger.info('Fetched file from Cloudinary:', {
       messageId,
       fileName,
       contentType,
@@ -222,7 +222,7 @@ exports.downloadFileByMessageId = async (messageId) => {
       contentType,
     };
   } catch (error) {
-    console.error('Error downloading file:', error.message);
+    logger.error('Error downloading file:', { error: error.message, stack: error.stack });
     throw new Error(`Failed to download file: ${error.message}`);
   }
 };

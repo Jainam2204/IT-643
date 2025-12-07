@@ -10,11 +10,13 @@ import {
   InputAdornment,
   Link,
   Divider,
+  alpha,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../utils/api";
 
 export default function LoginForm({ setUser }) {
   const navigate = useNavigate();
@@ -31,25 +33,18 @@ export default function LoginForm({ setUser }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(
-      "http://localhost:3000/auth/login",
-      formData,
-      { withCredentials: true }  // ✅ Sends cookie
-    );
+      const res = await api.post("/auth/login", formData);
 
-      // localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       if (setUser) {
         setUser(res.data.user);
       }
 
-      console.log("Logged in user:", res.data.user);
       toast.success(res.data.message || "Login successful!");
 
       navigate("/dashboard");
     } catch (err) {
-      console.error(err);
       toast.error(err.response?.data?.message || "Login failed");
     }
   };
@@ -61,38 +56,61 @@ export default function LoginForm({ setUser }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #f0f4f8 0%, #e9eff6 100%)",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
+        position: "relative",
+        overflow: "hidden",
         p: 2,
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%), radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.3), transparent 50%)",
+          pointerEvents: "none",
+        },
       }}
     >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={3}
-          sx={{
-            p: 5,
-            borderRadius: 3,
-            backgroundColor: "#fff",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-          }}
+      <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         >
-          <Typography
-            variant="h5"
-            align="center"
-            gutterBottom
-            sx={{ fontWeight: "600", color: "#2c3e50" }}
+          <Paper
+            elevation={24}
+            sx={{
+              p: { xs: 4, sm: 5 },
+              borderRadius: 4,
+              backgroundColor: alpha("#fff", 0.95),
+              backdropFilter: "blur(20px)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+            }}
           >
-            Log In
-          </Typography>
+            <Box sx={{ textAlign: "center", mb: 4 }}>
+              <Typography
+                variant="h4"
+                gutterBottom
+                sx={{
+                  fontWeight: 700,
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  mb: 1,
+                }}
+              >
+                Welcome Back
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{ color: "text.secondary", fontSize: "1rem" }}
+              >
+                Sign in to continue to SkillXchange
+              </Typography>
+            </Box>
 
-          <Typography
-            variant="body2"
-            align="center"
-            sx={{ mb: 3, color: "text.secondary" }}
-          >
-            Welcome back! Please enter your credentials.
-          </Typography>
-
-          <Divider sx={{ mb: 3 }} />
+            <Divider sx={{ mb: 4, opacity: 0.2 }} />
 
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
@@ -127,42 +145,51 @@ export default function LoginForm({ setUser }) {
               }}
             />
 
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              sx={{
-                mt: 3,
-                py: 1.4,
-                fontSize: "1rem",
-                fontWeight: 600,
-                borderRadius: 2,
-                backgroundColor: "#1976d2",
-                textTransform: "none",
-                "&:hover": {
-                  backgroundColor: "#1259a3",
-                },
-              }}
-            >
-              Log In
-            </Button>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                sx={{
+                  mt: 3,
+                  py: 1.5,
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  borderRadius: 3,
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  textTransform: "none",
+                  boxShadow: "0 8px 24px rgba(102, 126, 234, 0.4)",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #764ba2 0%, #667eea 100%)",
+                    boxShadow: "0 12px 32px rgba(102, 126, 234, 0.5)",
+                  },
+                }}
+              >
+                Sign In
+              </Button>
+            </motion.div>
 
             <Typography
               variant="body2"
               align="center"
-              sx={{ color: "text.secondary", mt: 2 }}
+              sx={{ color: "text.secondary", mt: 3 }}
             >
-              Don’t have an account?{" "}
+              Don't have an account?{" "}
               <Link
                 href="/signup"
                 underline="hover"
-                sx={{ color: "primary.main", fontWeight: 500 }}
+                sx={{
+                  color: "primary.main",
+                  fontWeight: 600,
+                  "&:hover": { color: "primary.dark" },
+                }}
               >
                 Sign up
               </Link>
             </Typography>
           </Box>
         </Paper>
+        </motion.div>
       </Container>
     </Box>
   );

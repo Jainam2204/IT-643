@@ -166,84 +166,160 @@ const handleReject = async (senderId) => {
     );
 
   return (
-    <Box sx={{ backgroundColor: "#f8faf8", minHeight: "100vh" }}>
-      {/* <Navbar /> */}
-      <Container sx={{ mt: 6, pb: 6 }}>
+    <Box
+      sx={{
+        backgroundColor: "#f8fafc",
+        minHeight: "100vh",
+        background: "linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%)",
+      }}
+    >
+      <Container sx={{ mt: 10, pb: 6 }}>
         {/* ================= DASHBOARD SUMMARY ================= */}
        {user && (
   <Grid container spacing={3} sx={{ mb: 4 }}>
     {/* 👤 Profile */}
-    <Grid item xs={12} md={3}>
-      <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
-        <Typography variant="h6" sx={{ color: "#2e7d32" }}>
+    <Grid item xs={12} sm={6} md={3}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          borderRadius: 4,
+          textAlign: "center",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-4px)",
+            boxShadow: "0 12px 24px rgba(102, 126, 234, 0.3)",
+          },
+        }}
+      >
+        <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
           👤 Profile
         </Typography>
-        <Typography sx={{ mt: 1, fontWeight: 600 }}>
+        <Typography sx={{ mt: 1, fontWeight: 700, fontSize: "1.1rem" }}>
           {user.name}
         </Typography>
-        <Typography sx={{ color: "gray", fontSize: "0.9rem" }}>
+        <Typography sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.875rem", mt: 0.5 }}>
           {user.email}
         </Typography>
       </Paper>
     </Grid>
 
     {/* 🧩 Skills Have */}
-    <Grid item xs={12} md={3}>
-      <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
-        <Typography variant="h6" sx={{ color: "#388e3c" }}>
+    <Grid item xs={12} sm={6} md={3}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          borderRadius: 4,
+          textAlign: "center",
+          background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+          color: "white",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-4px)",
+            boxShadow: "0 12px 24px rgba(16, 185, 129, 0.3)",
+          },
+        }}
+      >
+        <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
           🧩 Skills Have
         </Typography>
-        <Typography sx={{ mt: 1, fontWeight: 500 }}>
+        <Typography sx={{ mt: 1, fontWeight: 600, fontSize: "0.95rem" }}>
           {user.skillsHave?.join(", ") || "N/A"}
         </Typography>
       </Paper>
     </Grid>
 
     {/* 🎯 Skills Want */}
-    <Grid item xs={12} md={3}>
-      <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
-        <Typography variant="h6" sx={{ color: "#388e3c" }}>
+    <Grid item xs={12} sm={6} md={3}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          borderRadius: 4,
+          textAlign: "center",
+          background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+          color: "white",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-4px)",
+            boxShadow: "0 12px 24px rgba(59, 130, 246, 0.3)",
+          },
+        }}
+      >
+        <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
           🎯 Skills Want
         </Typography>
-        <Typography sx={{ mt: 1, fontWeight: 500 }}>
+        <Typography sx={{ mt: 1, fontWeight: 600, fontSize: "0.95rem" }}>
           {user.skillsWant?.join(", ") || "N/A"}
         </Typography>
       </Paper>
     </Grid>
 
-    {/* 🤝 Connections – ONLY connections info */}
-    <Grid item xs={12} md={3}>
-      <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
-        <Typography variant="h6" sx={{ color: "#1b5e20" }}>
+    {/* 🤝 Connections */}
+    <Grid item xs={12} sm={6} md={3}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          borderRadius: 4,
+          textAlign: "center",
+          background: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
+          color: "white",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-4px)",
+            boxShadow: "0 12px 24px rgba(139, 92, 246, 0.3)",
+          },
+        }}
+      >
+        <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
           🤝 Connections
         </Typography>
         <Typography
-          variant="h5"
-          sx={{ fontWeight: 700, color: "#2e7d32" }}
+          variant="h4"
+          sx={{ fontWeight: 700, color: "white", my: 1 }}
         >
           {connections.length}
         </Typography>
-        <Typography sx={{ mt: 1, fontSize: "0.9rem", color: "gray" }}>
+        <Typography sx={{ fontSize: "0.875rem", opacity: 0.9 }}>
           Free Left: {user.freeConnectionLeft}
         </Typography>
       </Paper>
     </Grid>
 
-    {/* 🚨 Reports – separate card */}
-    <Grid item xs={12} md={3}>
-      <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
-        <Typography variant="h6" sx={{ color: "#d32f2f" }}>
+    {/* 🚨 Reports */}
+    <Grid item xs={12} sm={6} md={3}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          borderRadius: 4,
+          textAlign: "center",
+          background: reportStats.isBanned
+            ? "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)"
+            : reportStats.reportCount >= 3
+            ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+            : "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+          color: "white",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-4px)",
+            boxShadow: reportStats.isBanned
+              ? "0 12px 24px rgba(239, 68, 68, 0.3)"
+              : "0 12px 24px rgba(100, 116, 139, 0.3)",
+          },
+        }}
+      >
+        <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
           🚨 Reports
         </Typography>
-
-        <Typography
-          variant="h5"
-          sx={{ fontWeight: 700, mt: 1 }}
-        >
+        <Typography variant="h4" sx={{ fontWeight: 700, my: 1 }}>
           {reportStats.reportCount}
         </Typography>
-
-        <Typography sx={{ mt: 1, fontSize: "0.9rem", color: "gray" }}>
+        <Typography sx={{ fontSize: "0.875rem", opacity: 0.9 }}>
           Reports on your account
         </Typography>
 
@@ -251,13 +327,13 @@ const handleReject = async (senderId) => {
           <Typography
             sx={{
               mt: 1.5,
-              fontSize: "0.8rem",
-              color: "#d32f2f",
+              fontSize: "0.75rem",
+              color: "white",
               fontWeight: 600,
+              opacity: 0.95,
             }}
           >
-            ⚠ Your account has multiple reports.
-            It may get banned soon if this continues.
+            ⚠ Warning: Multiple reports detected
           </Typography>
         )}
 
@@ -265,12 +341,12 @@ const handleReject = async (senderId) => {
           <Typography
             sx={{
               mt: 1.5,
-              fontSize: "0.8rem",
-              color: "#b71c1c",
+              fontSize: "0.75rem",
+              color: "white",
               fontWeight: 700,
             }}
           >
-            🚫 Your account is currently banned.
+            🚫 Account Banned
           </Typography>
         )}
       </Paper>
@@ -281,12 +357,13 @@ const handleReject = async (senderId) => {
 
         {/* ================= SUGGESTED CONNECTIONS ================= */}
         <Paper
-          elevation={5}
+          elevation={0}
           sx={{
-            p: 5,
+            p: { xs: 3, sm: 4, md: 5 },
             borderRadius: 4,
-            background: "linear-gradient(135deg, #ffffff, #f4faf5)",
-            boxShadow: "0 4px 25px rgba(0, 0, 0, 0.05)",
+            background: "white",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+            border: "1px solid rgba(0, 0, 0, 0.05)",
           }}
         >
           <Typography
@@ -294,7 +371,9 @@ const handleReject = async (senderId) => {
             gutterBottom
             sx={{
               fontWeight: 700,
-              color: "#1b5e20",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
               textAlign: "center",
               mb: 3,
             }}

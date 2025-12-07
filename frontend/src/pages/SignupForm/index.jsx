@@ -15,7 +15,7 @@ import {
   StepLabel,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import axios from "axios";
+import api from "../../utils/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 const steps = ["Create Account", "Add Skills"];
@@ -55,7 +55,7 @@ const navigate = useNavigate();
   const handleSubmit = async (e) => {
   e.preventDefault();
   try {
-    const res = await axios.post("http://localhost:3000/auth/register", {
+    const res = await api.post("/auth/register", {
       name: formData.fullName,
       email: formData.email,
       password: formData.password,
@@ -66,7 +66,6 @@ const navigate = useNavigate();
     toast.success(res.data.message || "Signup successful!");
     navigate("/verify-email", { state: { userId: res.data.userId } });
   } catch (err) {
-    console.error("Error during signup:", err);
     toast.error(err.response?.data?.message || "Signup failed");
   }
 };

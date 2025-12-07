@@ -1,4 +1,5 @@
 const messageService = require("../services/messageService");
+const logger = require("../utils/logger");
 
 let io = null;
 
@@ -25,7 +26,7 @@ exports.getMessages = async (req, res) => {
 
     res.json(result.messages);
   } catch (error) {
-    console.error("getMessages error:", error);
+    logger.error("getMessages error:", { error: error.message, stack: error.stack });
     res.status(500).json({ message: error.message || "Server error" });
   }
 };
@@ -53,7 +54,7 @@ exports.sendMessage = async (req, res) => {
       if (fileData.size > 10 * 1024 * 1024) {
         return res.status(400).json({ message: "File size exceeds 10MB limit" });
       }
-      console.log("Uploading file:", fileData.originalname, "Size:", fileData.size, "Type:", fileData.mimetype);
+      logger.info("Uploading file:", { filename: fileData.originalname, size: fileData.size, type: fileData.mimetype });
     }
 
     const result = await messageService.createMessage(
@@ -71,8 +72,7 @@ exports.sendMessage = async (req, res) => {
 
     res.status(201).json(result.message);
   } catch (error) {
-    console.error("sendMessage error:", error);
-    console.error("Error stack:", error.stack);
+    logger.error("sendMessage error:", { error: error.message, stack: error.stack });
     
     let statusCode = 500;
     let errorMessage = "Server error";
@@ -124,9 +124,9 @@ exports.downloadFile = async (req, res) => {
     res.setHeader('Expires', '0');
 
     res.send(fileData.buffer);
-    console.log('File download initiated:', { messageId, fileName: fileData.fileName });
+    logger.info('File download initiated:', { messageId, fileName: fileData.fileName });
   } catch (error) {
-    console.error('downloadFile error:', error);
+    logger.error('downloadFile error:', { error: error.message, stack: error.stack });
     res.status(500).json({ message: error.message || "Download failed" });
   }
 };

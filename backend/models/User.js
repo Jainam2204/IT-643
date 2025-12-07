@@ -30,4 +30,10 @@ function skillLimit(val) {
   return val.length <= 3;
 }
 
+// Indexes for common queries
+UserSchema.index({ email: 1 }); // Already unique, but explicit for performance
+UserSchema.index({ isVerified: 1 });
+UserSchema.index({ isBanned: 1 });
+UserSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("User", UserSchema);
