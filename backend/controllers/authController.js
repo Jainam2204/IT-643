@@ -13,12 +13,13 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { token, user } = await authService.loginUser(req.body);
+    const isProduction = process.env.NODE_ENV === "production";
 
     // Set cookie
     res.cookie("authToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // true on prod (HTTPS)
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // or "none" if using cross-site + HTTPS
+      secure: isProduction, // true on prod (HTTPS)
+      sameSite: isProduction ? "none" : "lax", // or "none" if using cross-site + HTTPS
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
