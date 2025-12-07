@@ -61,8 +61,15 @@ app.use(
       // Normalize the incoming origin (remove trailing slash, lowercase)
       const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
 
+      // Check exact match first
       if (normalizedOrigins.includes(normalizedOrigin)) {
         logger.info(`CORS allowed: ${origin}`);
+        return callback(null, true);
+      }
+
+      // Allow all Vercel preview deployments (*.vercel.app)
+      if (normalizedOrigin.endsWith('.vercel.app')) {
+        logger.info(`CORS allowed (Vercel preview): ${origin}`);
         return callback(null, true);
       }
 
@@ -123,7 +130,8 @@ app.use((err, req, res, next) => {
   const origin = req.headers.origin;
   if (origin) {
     const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
-    if (normalizedOrigins.includes(normalizedOrigin)) {
+    // Allow if it's in the allowed list OR if it's a Vercel preview URL
+    if (normalizedOrigins.includes(normalizedOrigin) || normalizedOrigin.endsWith('.vercel.app')) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
