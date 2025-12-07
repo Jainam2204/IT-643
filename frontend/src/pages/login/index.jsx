@@ -30,21 +30,67 @@ export default function LoginForm({ setUser }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   try {
+  //     const res = await api.post("/auth/login", formData);
+
+  //     localStorage.setItem("user", JSON.stringify(res.data.user));
+
+  //     if (setUser) {
+  //       setUser(res.data.user);
+  //     }
+
+  //     toast.success(res.data.message || "Login successful!");
+
+  //     navigate("/dashboard");
+  //   } catch (err) {
+  //     toast.error(err.response?.data?.message || "Login failed");
+  //   }
+  // };
+
+ const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const res = await api.post("/auth/login", formData);
 
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      const user = res.data.user;
+
+      // ✅ IF USER EXISTS BUT IS NOT VERIFIED
+      if (user && !user.isVerified) {
+        toast.warn("Your email is not verified. Verification mail sent again.");
+
+        // ✅ TRY TO RESEND MAIL (FAIL SAFE)
+        try {
+          await api.post("/auth/resend-verification", {
+            userId: user._id,
+            email: user.email,
+          });
+        } catch (mailErr) {
+          console.warn("Resend mail failed, continuing anyway : ", mailErr);
+        }
+
+        // ✅ FORCE NAVIGATION TO VERIFY PAGE
+        console.log("Redirecting to verify page...");
+        navigate("/verify-email", {
+          state: { userId: user._id },
+        });
+
+        return; // ⛔ VERY IMPORTANT: STOP NORMAL LOGIN FLOW
+      }
+
+      // ✅ NORMAL VERIFIED LOGIN FLOW
+      localStorage.setItem("user", JSON.stringify(user));
 
       if (setUser) {
-        setUser(res.data.user);
+        setUser(user);
       }
 
       toast.success(res.data.message || "Login successful!");
-
       navigate("/dashboard");
     } catch (err) {
+      console.error("Login error:", err);
       toast.error(err.response?.data?.message || "Login failed");
     }
   };

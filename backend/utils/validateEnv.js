@@ -8,8 +8,6 @@ const envSchema = Joi.object({
   JWT_SECRET: Joi.string().required().min(32).description('JWT secret key (minimum 32 characters)'),
   CLIENT_URL: Joi.string().uri().required().description('Frontend client URL'),
   FRONTEND_URL: Joi.string().uri().optional().description('Alternative frontend URL'),
-  EMAIL: Joi.string().email().required().description('Email address for sending emails'),
-  EMAIL_PASSWORD: Joi.string().required().description('Email password or app password'),
   CLOUDINARY_CLOUD_NAME: Joi.string().optional().allow('').description('Cloudinary cloud name'),
   CLOUDINARY_API_KEY: Joi.string().optional().allow('').description('Cloudinary API key'),
   CLOUDINARY_SECRET_KEY: Joi.string().optional().allow('').description('Cloudinary secret key'),
