@@ -43,19 +43,3 @@ const sendEmail = async (to, subject, text) => {
 };
 
 module.exports = sendEmail;
-
-// await transporter.sendMail({
-//       from: `"Packify" ${process.env.EMAIL_FROM}`,
-//       to: user.email,
-//       subject: 'Password Reset',
-//       html: `<p>Hi ${user.name},</p>
-
-//             <p>We received a password reset request for your account. Click the link below to set a new password:</p>
-
-//             <p><a href=${passwordResetLink} target="_blank">${passwordResetLink}</a></p>
-
-//             <p>If you didn't request this, you can ignore this email.</p>
-
-//             <p>Thanks,<br>
-//             Packify Team</p>`
-//     });
