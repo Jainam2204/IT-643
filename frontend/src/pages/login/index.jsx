@@ -49,51 +49,60 @@ export default function LoginForm({ setUser }) {
   //   }
   // };
 
- const handleSubmit = async (e) => {
-    e.preventDefault();
+// ... existing code ...
 
-    try {
-      const res = await api.post("/auth/login", formData);
+// Inside handleSubmit in LoginForm.js
 
-      const user = res.data.user;
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-      // ✅ IF USER EXISTS BUT IS NOT VERIFIED
-      if (user && !user.isVerified) {
-        toast.warn("Your email is not verified. Verification mail sent again.");
+  try {
+    const res = await api.post("/auth/login", formData);
+    const user = res.data.user;
 
-        // ✅ TRY TO RESEND MAIL (FAIL SAFE)
-        try {
-          await api.post("/auth/resend-verification", {
-            userId: user._id,
-            email: user.email,
-          });
-        } catch (mailErr) {
-          console.warn("Resend mail failed, continuing anyway : ", mailErr);
-        }
+    // ❌ REMOVE THIS REDUNDANT BLOCK
+    /*
+    if (user && user.isVerified === false) {
+      toast.error(res.data.message || "Please verify your email");
 
-        // ✅ FORCE NAVIGATION TO VERIFY PAGE
-        console.log("Redirecting to verify page...");
-        navigate("/verify-email", {
-          state: { userId: user._id },
-        });
+      navigate("/verify-email", {
+        state: { userId: user._id },
+      });
 
-        return; // ⛔ VERY IMPORTANT: STOP NORMAL LOGIN FLOW
-      }
-
-      // ✅ NORMAL VERIFIED LOGIN FLOW
-      localStorage.setItem("user", JSON.stringify(user));
-
-      if (setUser) {
-        setUser(user);
-      }
-
-      toast.success(res.data.message || "Login successful!");
-      navigate("/dashboard");
-    } catch (err) {
-      console.error("Login error:", err);
-      toast.error(err.response?.data?.message || "Login failed");
+      return;
     }
-  };
+    */
+
+    // ✅ Verified login
+    localStorage.setItem("user", JSON.stringify(user));
+    if (setUser) setUser(user);
+
+    toast.success(res.data.message || "Login successful!");
+    navigate("/dashboard");
+
+  } catch (err) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+
+    // 🛑 This correctly handles the 403 from the backend
+    if (
+      status === 403 ||
+      (data?.isVerified === false && data?.user?._id)
+    ) {
+      // NOTE: data?.user?._id is where the user ID comes from for the navigate state
+      toast.warn(data?.message || "Please verify your email");
+
+      navigate("/verify-email", {
+        state: { userId: data?.user?._id },
+      });
+
+      return;
+    }
+
+    toast.error(data?.message || "Login failed");
+  }
+};
+// ... existing code ...
 
   return (
     <Box

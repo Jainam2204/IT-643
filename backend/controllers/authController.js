@@ -1,5 +1,7 @@
 const authService = require("../services/authService");
 const { logoutUserService } = require("../services/authService");
+const sendEmail = require("../utils/sendEmail"); // adjust path if different
+const User = require("../models/User");          // you likely already have this
 
 exports.register = async (req, res) => {
   try {
@@ -12,23 +14,57 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { token, user } = await authService.loginUser(req.body);
+    const result = await authService.loginUser(req.body);
     const isProduction = process.env.NODE_ENV === "production";
 
-    // Set cookie
+    if (result.unverified) {
+      const user = result.user;
+
+      const newCode = String(Math.floor(100000 + Math.random() * 900000));
+      user.verificationCode = newCode;
+      await user.save();
+
+      try {
+        await sendEmail(
+          user.email,
+          "Verify Your Email",
+          `Your new verification code is: ${newCode}`
+        );
+      } catch (err) {
+        console.error("Resend verification email failed:", err.message);
+      }
+
+      return res.status(403).json({
+        message: "Email not verified. A new verification code has been sent.",
+        isVerified: false,
+        user: { _id: user._id, email: user.email },
+      });
+    }
+
+    const { token, user } = result;
+
     res.cookie("authToken", token, {
       httpOnly: true,
-      secure: isProduction, // true on prod (HTTPS)
-      sameSite: isProduction ? "none" : "lax", // or "none" if using cross-site + HTTPS
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    // No need to send token in body now
-    res.status(200).json({ message: "Login Success", user });
+    return res.status(200).json({
+      message: "Login Success",
+      user,
+    });
+
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    return res.status(error.status || 400).json({
+      message: error.message,
+      isVerified: error.isVerified,
+      user: error.user
+    });
   }
 };
+
+
 
 
 exports.me = async (req, res) => {

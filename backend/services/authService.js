@@ -22,19 +22,31 @@ exports.registerUser = async ({ name, email, password, skillsHave = [], skillsWa
   return user;
 };
 
+// authService.js
 exports.loginUser = async ({ email, password }) => {
   if (!email || !password) throw new Error("Email and password are required");
 
-  let user = await User.findOne({ email });
+  const user = await User.findOne({ email });
   if (!user) throw new Error("Invalid credentials");
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new Error("Invalid credentials");
 
-  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+  // 🔴 Not verified → let controller handle it
+  if (!user.isVerified) {
+    return { unverified: true, user };
+  }
+
+  const token = jwt.sign(
+    { userId: user._id },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
 
   return { token, user };
 };
+
+
 
 exports.getUserProfile = async (userId) => {
   const user = await User.findById(userId).select("-password");
