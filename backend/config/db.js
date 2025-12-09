@@ -48,6 +48,7 @@ const connectDB = async () => {
     }
 
     if (isConnected) {
+      // Avoid reconnecting if already connected
       return mongoose.connection;
     }
 
