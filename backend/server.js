@@ -13,16 +13,13 @@ const { initializeSocket } = require("./socket");
 
 const messageController = require("./controllers/messageController");
 
-// Load environment variables
 dotenv.config();
 
-// Create logs directory if it doesn't exist
 const logsDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 
-// Validate environment variables on startup
 try {
   validateEnv();
 } catch (error) {
@@ -30,7 +27,6 @@ try {
   process.exit(1);
 }
 
-// Connect to database
 connectDB();
 
 const server = createServer(app);
