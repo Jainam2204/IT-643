@@ -1,7 +1,7 @@
 const Subscription = require("../models/Subscription");
 const User = require("../models/User");
 const crypto = require("crypto");
-const razorpay = require("../utils/razorpay");
+const razorpay = require("../config/razorpay");
 
 const plans = {
   Basic: { price: 99, connectionsAllowed: 5, durationDays: 30 },
