@@ -10,9 +10,10 @@ import {
   IconButton,
   TextField,
 } from '@mui/material';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import SendIcon from '@mui/icons-material/Send';
 import api from '../utils/api';
 import MessageBubble from './MessageBubble';
-import { SendIcon, AttachFileIcon } from './Icons';
 
 function ChatArea({ selectedUser, currentUser, socket }) {
   const [messages, setMessages] = useState([]);
@@ -54,17 +55,11 @@ function ChatArea({ selectedUser, currentUser, socket }) {
 
   useEffect(() => {
     if (!socket || !selectedUser || !currentUser) {
-      console.log('Socket not ready:', { socket: !!socket, selectedUser: !!selectedUser, currentUser: !!currentUser });
       return;
     }
 
-    console.log('Setting up socket listeners for chat with:', selectedUser.name);
-
     const handleNewMessage = (message) => {
-      console.log('Received new message:', message);
-      
       if (!message.sender || !message.receiver) {
-        console.log('Invalid message - missing sender or receiver');
         return;
       }
 
@@ -72,7 +67,6 @@ function ChatArea({ selectedUser, currentUser, socket }) {
       const receiverId = getId(message.receiver);
       
       if (!senderId || !receiverId) {
-        console.log('Could not extract IDs from message');
         return;
       }
 
@@ -80,33 +74,20 @@ function ChatArea({ selectedUser, currentUser, socket }) {
         (senderId === selectedUser._id && receiverId === currentUser._id) ||
         (senderId === currentUser._id && receiverId === selectedUser._id);
 
-      console.log('Message check:', {
-        senderId,
-        receiverId,
-        selectedUserId: selectedUser._id,
-        currentUserId: currentUser._id,
-        isThisChat
-      });
-
       if (!isThisChat) {
-        console.log('Message not for this chat, ignoring');
         return;
       }
 
       setMessages((prev) => {
         const exists = prev.some((m) => m._id === message._id);
         if (exists) {
-          console.log('Message already exists, skipping');
           return prev;
         }
-        console.log('Adding new message to chat');
         return [...prev, message];
       });
     };
 
     const handleMessageSent = (message) => {
-      console.log('📤 Message sent confirmation:', message);
-      
       if (!message.sender || !message.receiver) return;
 
       const senderId = getId(message.sender);
@@ -130,10 +111,7 @@ function ChatArea({ selectedUser, currentUser, socket }) {
     socket.on('newMessage', handleNewMessage);
     socket.on('messageSent', handleMessageSent);
 
-    console.log('Socket listeners registered');
-
     return () => {
-      console.log('Removing socket listeners');
       socket.off('newMessage', handleNewMessage);
       socket.off('messageSent', handleMessageSent);
     };
@@ -167,20 +145,14 @@ function ChatArea({ selectedUser, currentUser, socket }) {
         formData.append('type', 'text');
       }
 
-      console.log('Sending message to:', selectedUser._id);
-
       const res = await api.post('/messages', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       const savedMessage = res.data;
-      console.log('Message saved:', savedMessage);
 
       if (socket && socket.connected) {
-        console.log('Emitting sendMessage event');
         socket.emit('sendMessage', { savedMessage });
-      } else {
-        console.warn('Socket not connected, message will not be sent in real-time');
       }
 
       setMessages((prev) => {
@@ -221,13 +193,15 @@ function ChatArea({ selectedUser, currentUser, socket }) {
       <Box
         sx={{
           flex: 1,
-          bgcolor: '#f5f5f5',
+          bgcolor: '#ffffff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Typography>Select a user to start chatting</Typography>
+        <Typography variant="h6" sx={{ color: '#64748b', fontWeight: 500 }}>
+          Select a user to start chatting
+        </Typography>
       </Box>
     );
   }
@@ -239,7 +213,7 @@ function ChatArea({ selectedUser, currentUser, socket }) {
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        bgcolor: '#e3f2fd',
+        bgcolor: '#ffffff',
       }}
     >
       <Box
@@ -248,18 +222,18 @@ function ChatArea({ selectedUser, currentUser, socket }) {
           alignItems: 'center',
           gap: 1.5,
           px: 2,
-          py: 1,
+          py: 1.5,
           bgcolor: '#ffffff',
           borderBottom: '1px solid #e0e0e0',
         }}
       >
         <Avatar
-          sx={{ bgcolor: '#1565c0', color: '#ffffff', fontWeight: 600 }}
+          sx={{ bgcolor: '#1976d2', color: '#ffffff', fontWeight: 600 }}
         >
           {selectedUser.name?.charAt(0).toUpperCase()}
         </Avatar>
         <Box flex={1}>
-          <Typography variant="subtitle1" fontWeight={600}>
+          <Typography variant="subtitle1" fontWeight={600} sx={{ color: '#1e293b' }}>
             {selectedUser.name}
           </Typography>
         </Box>
@@ -269,8 +243,9 @@ function ChatArea({ selectedUser, currentUser, socket }) {
         sx={{
           flex: 1,
           overflowY: 'auto',
-          px: 1,
-          py: 1,
+          px: 2,
+          py: 2,
+          bgcolor: '#f8fafc',
         }}
       >
         {loading ? (
@@ -289,7 +264,7 @@ function ChatArea({ selectedUser, currentUser, socket }) {
             alignItems="center"
             justifyContent="center"
           >
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: '#64748b' }}>
               No messages yet. Say hi! 👋
             </Typography>
           </Box>
@@ -303,8 +278,8 @@ function ChatArea({ selectedUser, currentUser, socket }) {
                     size="small"
                     variant="outlined"
                     sx={{
-                      borderColor: '#1565c0',
-                      color: '#1565c0',
+                      borderColor: '#cbd5e1',
+                      color: '#64748b',
                       backgroundColor: '#ffffff',
                     }}
                   />
@@ -357,6 +332,7 @@ function ChatArea({ selectedUser, currentUser, socket }) {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           size="small"
+          sx={{ color: '#64748b' }}
         >
           <AttachFileIcon fontSize="small" />
         </IconButton>
@@ -365,19 +341,20 @@ function ChatArea({ selectedUser, currentUser, socket }) {
           size="small"
           fullWidth
           variant="outlined"
-          placeholder="Type a message"
+          placeholder="Type a message..."
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           sx={{
             '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
               '& fieldset': {
                 borderColor: '#e0e0e0',
               },
               '&:hover fieldset': {
-                borderColor: '#e0e0e0',
+                borderColor: '#cbd5e1',
               },
               '&.Mui-focused fieldset': {
-                borderColor: '#e0e0e0',
+                borderColor: '#1976d2',
               },
             },
           }}
@@ -385,7 +362,7 @@ function ChatArea({ selectedUser, currentUser, socket }) {
 
         <IconButton
           type="submit"
-          sx={{ color: '#1565c0' }}
+          sx={{ color: '#1976d2' }}
           disabled={
             !inputMessage.trim() && !fileInputRef.current?.files[0]
           }

@@ -1,245 +1,3 @@
-// import React, { useEffect, useState } from "react";
-// import {
-//   Box,
-//   Container,
-//   Paper,
-//   Typography,
-//   Grid,
-//   Card,
-//   CardContent,
-//   Button,
-//   CircularProgress,
-//   Divider,
-//   Stack,
-// } from "@mui/material";
-// import api from "../../utils/api";
-// import { toast } from "react-toastify";
-// import Navbar from "../../components/Navbar";
-// import { useNavigate } from "react-router-dom";
-// import { useNotifications } from "../../context/NotificationContext";
-
-// const Connections = () => {
-//   const [connections, setConnections] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [creatingMeetingId, setCreatingMeetingId] = useState(null);
-//   const navigate = useNavigate();
-//   const { meetingNotifications } = useNotifications();
-
-// useEffect(() => {
-//   const fetchConnections = async () => {
-//     const userData = localStorage.getItem("user");
-
-//     if (!userData) {
-//       toast.error("You must be logged in to view connections");
-//       setLoading(false);
-//       return;
-//     }
-
-//     try {
-//       const user = JSON.parse(userData);
-//       const userId = user._id || user.id || user.userId;
-
-//       if (!userId) {
-//         toast.error("Invalid user data. Please log in again.");
-//         setLoading(false);
-//         return;
-//       }
-
-//       // ✅ cookie-based request
-//       const res = await api.get("/connect/connections");
-//       setConnections(res.data.data || []);
-//     } catch (err) {
-//       console.error("Error fetching connections:", err);
-//       toast.error("Failed to fetch connections");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   fetchConnections();
-// }, []);
-
-
-// const handleStartMeeting = async (inviteeId) => {
-//   const userData = localStorage.getItem("user");
-//   if (!userData) {
-//     toast.error("Please log in to start a meeting");
-//     return;
-//   }
-
-//   try {
-//     setCreatingMeetingId("creating");
-
-//     // ✅ cookie-based request
-//     const res = await api.post("/meetings", { title: "", inviteeId });
-
-//     const meetingId = res.data?.meetingId;
-//     if (!meetingId) throw new Error("Failed to create meeting");
-
-//     navigate(`/meet/${meetingId}`);
-//   } catch (err) {
-//     console.error(err);
-//     toast.error(err.response?.data?.message || "Failed to create meeting");
-//   } finally {
-//     setCreatingMeetingId(null);
-//   }
-// };
-
-
-//   const getActiveMeetingForConnection = (connectionId) => {
-//     return Object.values(meetingNotifications).find(
-//       (notif) => notif.connectionId === connectionId
-//     );
-//   };
-
-//   if (loading)
-//     return (
-//       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
-//         <CircularProgress />
-//       </Box>
-//     );
-
-//   return (
-//     <Box sx={{ backgroundColor: "#f8faf8", minHeight: "100vh" }}>
-//       <Navbar />
-//       <Container sx={{ mt: 6, pb: 6 }}>
-//         <Paper
-//           elevation={5}
-//           sx={{
-//             p: 5,
-//             borderRadius: 4,
-//             background: "linear-gradient(135deg, #ffffff, #f4faf5)",
-//             boxShadow: "0 4px 25px rgba(0, 0, 0, 0.05)",
-//           }}
-//         >
-//           <Typography
-//             variant="h5"
-//             gutterBottom
-//             sx={{
-//               fontWeight: 700,
-//               color: "#1b5e20",
-//               textAlign: "center",
-//               mb: 3,
-//             }}
-//           >
-//             🌿 Your Connections
-//           </Typography>
-
-//           <Divider sx={{ mb: 4 }} />
-
-//           {!connections.length ? (
-//             <Typography align="center" sx={{ color: "gray" }}>
-//               You haven’t connected with anyone yet 
-//             </Typography>
-//           ) : (
-//             <Grid container spacing={3}>
-//               {connections.map((conn) => (
-//                 <Grid item xs={12} sm={6} md={4} key={conn._id}>
-//                   <Card
-//                     elevation={4}
-//                     sx={{
-//                       borderRadius: 4,
-//                       transition: "all 0.3s ease",
-//                       "&:hover": {
-//                         transform: "translateY(-5px)",
-//                         boxShadow: "0 8px 20px rgba(27, 94, 32, 0.1)",
-//                       },
-//                     }}
-//                   >
-//                     <CardContent>
-//                       <Typography
-//                         variant="h6"
-//                         fontWeight={600}
-//                         sx={{ color: "#2e7d32", mb: 1 }}
-//                       >
-//                         {conn.name}
-//                       </Typography>
-//                       <Typography
-//                         variant="body2"
-//                         color="text.secondary"
-//                         sx={{ mb: 1 }}
-//                       >
-//                         {conn.email}
-//                       </Typography>
-
-//                       <Typography variant="body2" sx={{ mt: 1 }}>
-//                         <strong>Skills Have:</strong>{" "}
-//                         {conn.skillsHave?.join(", ") || "N/A"}
-//                       </Typography>
-//                       <Typography variant="body2">
-//                         <strong>Skills Want:</strong>{" "}
-//                         {conn.skillsWant?.join(", ") || "N/A"}
-//                       </Typography>
-
-//                       <Stack direction="row" spacing={1.5} sx={{ mt: 2 }}>
-//                         <Button
-//                           variant="outlined"
-//                           size="small"
-//                           color="error"
-//                           sx={{
-//                             textTransform: "none",
-//                             borderRadius: 3,
-//                             px: 2,
-//                           }}
-//                           onClick={() => toast.info("Feature coming soon!")}
-//                         >
-//                           Remove
-//                         </Button>
-
-//                         {getActiveMeetingForConnection(conn._id) ? (
-//                           <Button
-//                             variant="contained"
-//                             size="small"
-//                             sx={{
-//                               textTransform: "none",
-//                               borderRadius: 3,
-//                               backgroundColor: "#4caf50",
-//                               "&:hover": { backgroundColor: "#388e3c" },
-//                             }}
-//                             onClick={() => {
-//                               const activeMeet =
-//                                 getActiveMeetingForConnection(conn._id);
-//                               if (activeMeet) {
-//                                 navigate(`/meet/${activeMeet.meetingId}`);
-//                               }
-//                             }}
-//                           >
-//                             Join Meet
-//                           </Button>
-//                         ) : (
-//                           <Button
-//                             variant="contained"
-//                             size="small"
-//                             sx={{
-//                               textTransform: "none",
-//                               borderRadius: 3,
-//                               backgroundColor: "#1976d2",
-//                               "&:hover": { backgroundColor: "#1259a3" },
-//                             }}
-//                             onClick={() => handleStartMeeting(conn._id)}
-//                             disabled={creatingMeetingId === "creating"}
-//                           >
-//                             {creatingMeetingId === "creating"
-//                               ? "Starting..."
-//                               : "Meet"}
-//                           </Button>
-//                         )}
-//                       </Stack>
-//                     </CardContent>
-//                   </Card>
-//                 </Grid>
-//               ))}
-//             </Grid>
-//           )}
-//         </Paper>
-//       </Container>
-//     </Box>
-//   );
-// };
-
-// export default Connections;
-
-
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -251,35 +9,30 @@ import {
   CardContent,
   Button,
   CircularProgress,
-  Divider,
   Stack,
+  Avatar,
+  Chip,
 } from "@mui/material";
+import ChatIcon from "@mui/icons-material/Chat";
 import { toast } from "react-toastify";
-
 import api from "../../utils/api";
-// import Navbar from "../../components/Navbar";
-import ReportUserDialog from "../../components/ReportDialog"; // adjust name/path if needed
+import ReportUserDialog from "../../components/ReportDialog";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../../context/NotificationContext";
-import useAuth from "../../hooks/useAuth"; // adjust path if needed
+import useAuth from "../../hooks/useAuth";
 
 const Connections = () => {
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Reporting-related state
   const [reportOpen, setReportOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState(null);
-  const [reportedUsers, setReportedUsers] = useState({}); // { userId: true }
-
-  // Meeting-related state - track specific connection ID that's creating a meeting
+  const [reportedUsers, setReportedUsers] = useState({});
   const [creatingMeetingId, setCreatingMeetingId] = useState(null);
 
   const navigate = useNavigate();
   const { meetingNotifications } = useNotifications();
   const { user: currentUser, loading: authLoading } = useAuth();
 
-  // Fetch connections + per-connection report status
   useEffect(() => {
     if (authLoading) return;
 
@@ -291,14 +44,11 @@ const Connections = () => {
       }
 
       try {
-        // ✅ cookie-based: api already sends cookies
         const res = await api.get("/connect/connections");
         const list = res.data.data || [];
         setConnections(list);
 
         const statusMap = {};
-
-        // For each connection, check if current user has already reported them
         await Promise.all(
           list.map(async (conn) => {
             try {
@@ -307,11 +57,7 @@ const Connections = () => {
               );
               statusMap[conn._id] = !!statusRes.data.hasReported;
             } catch (err) {
-              console.warn(
-                "Failed to check report status for",
-                conn._id,
-                err
-              );
+              console.warn("Failed to check report status for", conn._id, err);
             }
           })
         );
@@ -328,7 +74,6 @@ const Connections = () => {
     fetchConnections();
   }, [authLoading, currentUser?._id]);
 
-  // ✅ Keep meeting logic the same (only removed token header, now cookie-based)
   const handleStartMeeting = async (inviteeId) => {
     if (!currentUser?._id) {
       toast.error("Please log in to start a meeting");
@@ -336,9 +81,7 @@ const Connections = () => {
     }
 
     try {
-      // Track the specific connection ID that's creating a meeting
       setCreatingMeetingId(inviteeId);
-
       const res = await api.post("/meetings", {
         title: "",
         inviteeId,
@@ -364,158 +107,178 @@ const Connections = () => {
 
   if (loading || authLoading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+          backgroundColor: "#e3f2fd",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ backgroundColor: "#f8faf8", minHeight: "100vh" }}>
-      {/* //<Navbar /> */}
-      <Container sx={{ mt: 6, pb: 6 }}>
-        <Paper
-          elevation={5}
+    <Box
+      sx={{
+        backgroundColor: "#e3f2fd",
+        minHeight: "100vh",
+        py: 4,
+      }}
+    >
+      <Container maxWidth="lg">
+        <Typography
+          variant="h4"
           sx={{
-            p: 5,
-            borderRadius: 4,
-            background: "linear-gradient(135deg, #ffffff, #f4faf5)",
-            boxShadow: "0 4px 25px rgba(0, 0, 0, 0.05)",
+            fontWeight: 700,
+            color: "#1e293b",
+            mb: 1,
           }}
         >
-          <Typography
-            variant="h5"
-            gutterBottom
+          Connections
+        </Typography>
+        <Typography variant="body1" sx={{ color: "#64748b", mb: 4 }}>
+          Connect with people who have the skills you want and want the skills you already know.
+        </Typography>
+
+        {!connections.length ? (
+          <Paper
+            elevation={0}
             sx={{
-              fontWeight: 700,
-              color: "#1b5e20",
+              p: 6,
+              borderRadius: 2,
+              backgroundColor: "#ffffff",
+              boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
               textAlign: "center",
-              mb: 3,
             }}
           >
-            🌿 Your Connections
-          </Typography>
-
-          <Divider sx={{ mb: 4 }} />
-
-          {!connections.length ? (
-            <Typography align="center" sx={{ color: "gray" }}>
-              You haven’t connected with anyone yet
+            <Typography sx={{ color: "#64748b" }}>
+              You haven't connected with anyone yet
             </Typography>
-          ) : (
-            <Grid container spacing={3}>
-              {connections.map((conn) => {
-                const alreadyReported = reportedUsers[conn._id];
+          </Paper>
+        ) : (
+          <Grid container spacing={3}>
+            {connections.map((conn) => {
+              const alreadyReported = reportedUsers[conn._id];
 
-                return (
-                  <Grid item xs={12} sm={6} md={4} key={conn._id}>
-                    <Card
-                      elevation={4}
-                      sx={{
-                        borderRadius: 4,
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          transform: "translateY(-5px)",
-                          boxShadow: "0 8px 20px rgba(27, 94, 32, 0.1)",
-                        },
-                      }}
-                    >
-                      <CardContent>
-                        <Typography
-                          variant="h6"
-                          fontWeight={600}
-                          sx={{ color: "#2e7d32", mb: 1 }}
+              return (
+                <Grid item xs={12} sm={6} md={4} key={conn._id}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      borderRadius: 2,
+                      backgroundColor: "#ffffff",
+                      boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.12)",
+                      },
+                    }}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                        <Avatar
+                          sx={{
+                            width: 64,
+                            height: 64,
+                            fontSize: "1.5rem",
+                            backgroundColor: "#1976d2",
+                            color: "white",
+                            fontWeight: 600,
+                          }}
                         >
-                          {conn.name}
+                          {conn.name?.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box flex={1}>
+                          <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b", mb: 0.5 }}>
+                            {conn.name}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: "#64748b" }}>
+                            {conn.email}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="body2" sx={{ mb: 1, color: "#1e293b" }}>
+                          <strong>Skills Have:</strong> {conn.skillsHave?.join(", ") || "N/A"}
                         </Typography>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ mb: 1 }}
+                        <Typography variant="body2" sx={{ mb: 2, color: "#1e293b" }}>
+                          <strong>Skills Want:</strong> {conn.skillsWant?.join(", ") || "N/A"}
+                        </Typography>
+                      </Box>
+
+                      <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          color="error"
+                          sx={{
+                            textTransform: "none",
+                            borderRadius: 1,
+                            flex: 1,
+                          }}
+                          disabled={alreadyReported}
+                          onClick={() => {
+                            setReportTarget(conn);
+                            setReportOpen(true);
+                          }}
                         >
-                          {conn.email}
-                        </Typography>
+                          {alreadyReported ? "Reported" : "Report"}
+                        </Button>
 
-                        <Typography variant="body2" sx={{ mt: 1 }}>
-                          <strong>Skills Have:</strong>{" "}
-                          {conn.skillsHave?.join(", ") || "N/A"}
-                        </Typography>
-                        <Typography variant="body2">
-                          <strong>Skills Want:</strong>{" "}
-                          {conn.skillsWant?.join(", ") || "N/A"}
-                        </Typography>
-
-                        <Stack direction="row" spacing={1.5} sx={{ mt: 2 }}>
-                          {/* Report button – disabled after reporting */}
+                        {getActiveMeetingForConnection(conn._id) ? (
                           <Button
-                            variant="outlined"
+                            variant="contained"
                             size="small"
-                            color="error"
+                            startIcon={<ChatIcon />}
                             sx={{
                               textTransform: "none",
-                              borderRadius: 3,
-                              px: 2,
+                              borderRadius: 1,
+                              flex: 1,
+                              backgroundColor: "#10b981",
+                              "&:hover": { backgroundColor: "#059669" },
                             }}
-                            disabled={alreadyReported}
                             onClick={() => {
-                              setReportTarget(conn);
-                              setReportOpen(true);
+                              const active = getActiveMeetingForConnection(conn._id);
+                              if (active) {
+                                navigate(`/meet/${active.meetingId}`);
+                              }
                             }}
                           >
-                            {alreadyReported ? "Reported" : "Report"}
+                            Join Meet
                           </Button>
-
-                          {/* Meet / Join Meet buttons – logic unchanged */}
-                          {getActiveMeetingForConnection(conn._id) ? (
-                            <Button
-                              variant="contained"
-                              size="small"
-                              sx={{
-                                textTransform: "none",
-                                borderRadius: 3,
-                                backgroundColor: "#4caf50",
-                                "&:hover": { backgroundColor: "#388e3c" },
-                              }}
-                              onClick={() => {
-                                const active =
-                                  getActiveMeetingForConnection(conn._id);
-                                if (active) {
-                                  navigate(`/meet/${active.meetingId}`);
-                                }
-                              }}
-                            >
-                              Join Meet
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="contained"
-                              size="small"
-                              sx={{
-                                textTransform: "none",
-                                borderRadius: 3,
-                                backgroundColor: "#1976d2",
-                                "&:hover": { backgroundColor: "#1259a3" },
-                              }}
-                              onClick={() => handleStartMeeting(conn._id)}
-                              disabled={creatingMeetingId === conn._id}
-                            >
-                              {creatingMeetingId === conn._id
-                                ? "Starting..."
-                                : "Meet"}
-                            </Button>
-                          )}
-                        </Stack>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                );
-              })}
-            </Grid>
-          )}
-        </Paper>
+                        ) : (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<ChatIcon />}
+                            sx={{
+                              textTransform: "none",
+                              borderRadius: 1,
+                              flex: 1,
+                              backgroundColor: "#1976d2",
+                              "&:hover": { backgroundColor: "#1565c0" },
+                            }}
+                            onClick={() => handleStartMeeting(conn._id)}
+                            disabled={creatingMeetingId === conn._id}
+                          >
+                            {creatingMeetingId === conn._id ? "Starting..." : "Meet"}
+                          </Button>
+                        )}
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        )}
       </Container>
 
-      {/* Report dialog – uses cookies via api, not localStorage */}
       {reportTarget && currentUser && (
         <ReportUserDialog
           open={reportOpen}

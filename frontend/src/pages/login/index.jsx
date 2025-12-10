@@ -9,11 +9,8 @@ import {
   IconButton,
   InputAdornment,
   Link,
-  Divider,
-  alpha,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
@@ -30,79 +27,39 @@ export default function LoginForm({ setUser }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   try {
-  //     const res = await api.post("/auth/login", formData);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  //     localStorage.setItem("user", JSON.stringify(res.data.user));
+    try {
+      const res = await api.post("/auth/login", formData);
+      const user = res.data.user;
 
-  //     if (setUser) {
-  //       setUser(res.data.user);
-  //     }
+      localStorage.setItem("user", JSON.stringify(user));
+      if (setUser) setUser(user);
 
-  //     toast.success(res.data.message || "Login successful!");
+      toast.success(res.data.message || "Login successful!");
+      navigate("/dashboard");
 
-  //     navigate("/dashboard");
-  //   } catch (err) {
-  //     toast.error(err.response?.data?.message || "Login failed");
-  //   }
-  // };
+    } catch (err) {
+      const status = err.response?.status;
+      const data = err.response?.data;
 
-// ... existing code ...
+      if (
+        status === 403 ||
+        (data?.isVerified === false && data?.user?._id)
+      ) {
+        toast.warn(data?.message || "Please verify your email");
 
-// Inside handleSubmit in LoginForm.js
+        navigate("/verify-email", {
+          state: { userId: data?.user?._id },
+        });
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+        return;
+      }
 
-  try {
-    const res = await api.post("/auth/login", formData);
-    const user = res.data.user;
-
-    // ❌ REMOVE THIS REDUNDANT BLOCK
-    /*
-    if (user && user.isVerified === false) {
-      toast.error(res.data.message || "Please verify your email");
-
-      navigate("/verify-email", {
-        state: { userId: user._id },
-      });
-
-      return;
+      toast.error(data?.message || "Login failed");
     }
-    */
-
-    // ✅ Verified login
-    localStorage.setItem("user", JSON.stringify(user));
-    if (setUser) setUser(user);
-
-    toast.success(res.data.message || "Login successful!");
-    navigate("/dashboard");
-
-  } catch (err) {
-    const status = err.response?.status;
-    const data = err.response?.data;
-
-    // 🛑 This correctly handles the 403 from the backend
-    if (
-      status === 403 ||
-      (data?.isVerified === false && data?.user?._id)
-    ) {
-      // NOTE: data?.user?._id is where the user ID comes from for the navigate state
-      toast.warn(data?.message || "Please verify your email");
-
-      navigate("/verify-email", {
-        state: { userId: data?.user?._id },
-      });
-
-      return;
-    }
-
-    toast.error(data?.message || "Login failed");
-  }
-};
-// ... existing code ...
+  };
 
   return (
     <Box
@@ -111,65 +68,43 @@ const handleSubmit = async (e) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
-        position: "relative",
-        overflow: "hidden",
+        background: "#e3f2fd",
         p: 2,
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%), radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.3), transparent 50%)",
-          pointerEvents: "none",
-        },
       }}
     >
-      <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+      <Container maxWidth="sm">
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 4, sm: 5 },
+            borderRadius: 2,
+            backgroundColor: "#ffffff",
+            boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
+          }}
         >
-          <Paper
-            elevation={24}
-            sx={{
-              p: { xs: 4, sm: 5 },
-              borderRadius: 4,
-              backgroundColor: alpha("#fff", 0.95),
-              backdropFilter: "blur(20px)",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-            }}
-          >
-            <Box sx={{ textAlign: "center", mb: 4 }}>
-              <Typography
-                variant="h4"
-                gutterBottom
-                sx={{
-                  fontWeight: 700,
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  mb: 1,
-                }}
-              >
-                Welcome Back
-              </Typography>
-              <Typography
-                variant="body1"
-                sx={{ color: "text.secondary", fontSize: "1rem" }}
-              >
-                Sign in to continue to SkillXchange
-              </Typography>
-            </Box>
-
-            <Divider sx={{ mb: 4, opacity: 0.2 }} />
+          <Box sx={{ mb: 4 }}>
+            <Typography
+              variant="h4"
+              gutterBottom
+              sx={{
+                fontWeight: 700,
+                color: "#1e293b",
+                mb: 1,
+              }}
+            >
+              Welcome Back
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{ color: "#64748b", fontSize: "0.95rem" }}
+            >
+              Sign in to continue to SkillXchange
+            </Typography>
+          </Box>
 
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
-              label="Email"
+              label="Email *"
               type="email"
               name="email"
               value={formData.email}
@@ -177,9 +112,10 @@ const handleSubmit = async (e) => {
               fullWidth
               margin="normal"
               required
+              sx={{ mb: 2 }}
             />
             <TextField
-              label="Password"
+              label="Password *"
               type={showPassword ? "text" : "password"}
               name="password"
               value={formData.password}
@@ -187,11 +123,13 @@ const handleSubmit = async (e) => {
               fullWidth
               margin="normal"
               required
+              sx={{ mb: 2 }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
                       onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -200,43 +138,39 @@ const handleSubmit = async (e) => {
               }}
             />
 
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                sx={{
-                  mt: 3,
-                  py: 1.5,
-                  fontSize: "1rem",
-                  fontWeight: 600,
-                  borderRadius: 3,
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  textTransform: "none",
-                  boxShadow: "0 8px 24px rgba(102, 126, 234, 0.4)",
-                  "&:hover": {
-                    background: "linear-gradient(135deg, #764ba2 0%, #667eea 100%)",
-                    boxShadow: "0 12px 32px rgba(102, 126, 234, 0.5)",
-                  },
-                }}
-              >
-                Sign In
-              </Button>
-            </motion.div>
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              sx={{
+                mt: 3,
+                py: 1.5,
+                fontSize: "1rem",
+                fontWeight: 600,
+                borderRadius: 1,
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                textTransform: "none",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #764ba2 0%, #667eea 100%)",
+                },
+              }}
+            >
+              Sign in
+            </Button>
 
             <Typography
               variant="body2"
               align="center"
-              sx={{ color: "text.secondary", mt: 3 }}
+              sx={{ color: "#64748b", mt: 3 }}
             >
               Don't have an account?{" "}
               <Link
                 href="/signup"
                 underline="hover"
                 sx={{
-                  color: "primary.main",
+                  color: "#667eea",
                   fontWeight: 600,
-                  "&:hover": { color: "primary.dark" },
+                  "&:hover": { color: "#764ba2" },
                 }}
               >
                 Sign up
@@ -244,7 +178,6 @@ const handleSubmit = async (e) => {
             </Typography>
           </Box>
         </Paper>
-        </motion.div>
       </Container>
     </Box>
   );

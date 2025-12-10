@@ -15,8 +15,6 @@ function Chat({ user, setUser }) {
   useEffect(() => {
     const socketUrl = import.meta.env.VITE_API_URL;
     
-    console.log('Connecting to socket:', socketUrl);
-    
     const newSocket = io(socketUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
@@ -26,10 +24,7 @@ function Chat({ user, setUser }) {
     });
 
     newSocket.on('connect', () => {
-      console.log('Socket connected:', newSocket.id);
-      
       if (user?._id) {
-        console.log('Joining with user ID:', user._id);
         newSocket.emit('join', user._id);
       }
     });
@@ -43,7 +38,6 @@ function Chat({ user, setUser }) {
     });
 
     newSocket.on('reconnect', (attemptNumber) => {
-      console.log('Socket reconnected after', attemptNumber, 'attempts');
       if (user?._id) {
         newSocket.emit('join', user._id);
       }
@@ -53,10 +47,9 @@ function Chat({ user, setUser }) {
     fetchUsers();
 
     return () => {
-      console.log('Cleaning up socket connection');
       newSocket.close();
     };
-  }, [user?._id]); // Re-connect if user changes
+  }, [user?._id]);
 
   const fetchUsers = async () => {
     try {
@@ -140,7 +133,7 @@ function Chat({ user, setUser }) {
         <Box
           sx={{
             flex: 1,
-            bgcolor: '#f5f5f5',
+            bgcolor: '#ffffff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -148,7 +141,7 @@ function Chat({ user, setUser }) {
         >
           <Typography
             variant="h6"
-            sx={{ color: '#1565c0', fontWeight: 500 }}
+            sx={{ color: '#64748b', fontWeight: 500 }}
           >
             Select a user to start chatting
           </Typography>

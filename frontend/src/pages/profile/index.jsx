@@ -5,7 +5,6 @@ import {
   Paper,
   Typography,
   CircularProgress,
-  Grid,
   Avatar,
   Button,
   Chip,
@@ -14,65 +13,62 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Grid,
 } from "@mui/material";
-import { motion } from "framer-motion";
-import api from "../../utils/api"
+import EditIcon from "@mui/icons-material/Edit";
+import EmailIcon from "@mui/icons-material/Email";
+import api from "../../utils/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-// import Navbar from "../../components/Navbar";
-import { BadgeCheck, Users, Code, Target, PencilLine } from "lucide-react";
 
 export default function Profile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [openEdit, setOpenEdit] = useState(false);
-  const [formData, setFormData] = useState({ name: "", skillsHave: "", skillsWant: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    skillsHave: "",
+    skillsWant: "",
+  });
 
-  // Fetch current user
- useEffect(() => {
-  const fetchUser = async () => {
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await api.get("/auth/me");
+        setUser(res.data);
+        setFormData({
+          name: res.data.name || "",
+          skillsHave: res.data.skillsHave?.join(", ") || "",
+          skillsWant: res.data.skillsWant?.join(", ") || "",
+        });
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Failed to fetch user data");
+        navigate("/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, [navigate]);
+
+  const handleUpdateProfile = async () => {
+    if (!user?._id) return;
+
     try {
-      const res = await api.get("/auth/me"); // 👈 cookie is sent automatically
-      setUser(res.data);
-      setFormData({
-        name: res.data.name || "",
-        skillsHave: res.data.skillsHave?.join(", ") || "",
-        skillsWant: res.data.skillsWant?.join(", ") || "",
+      const res = await api.put(`/user/update-profile/${user._id}`, {
+        name: formData.name,
+        skillsHave: formData.skillsHave.split(",").map((s) => s.trim()).filter(s => s),
+        skillsWant: formData.skillsWant.split(",").map((s) => s.trim()).filter(s => s),
       });
+
+      toast.success("Profile updated successfully!");
+      setUser(res.data);
+      setOpenEdit(false);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to fetch user data");
-      navigate("/login");
-    } finally {
-      setLoading(false);
+      toast.error(err.response?.data?.message || "Failed to update profile");
     }
   };
-  fetchUser();
-}, [navigate]);
-
-
-  // Handle profile update
-const handleUpdateProfile = async () => {
-  if (!user?._id) return;
-
-  try {
-    const res = await api.put(
-      `/user/update-profile/${user._id}`,
-      {
-        name: formData.name,
-        skillsHave: formData.skillsHave.split(",").map((s) => s.trim()),
-        skillsWant: formData.skillsWant.split(",").map((s) => s.trim()),
-      }
-    );
-
-    toast.success("Profile updated successfully!");
-    setUser(res.data);
-    setOpenEdit(false);
-  } catch (err) {
-    toast.error(err.response?.data?.message || "Failed to update profile");
-  }
-};
-
 
   if (loading) {
     return (
@@ -81,11 +77,11 @@ const handleUpdateProfile = async () => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          height: "100vh",
-          background: "linear-gradient(135deg, #f3f0ff, #f8f7ff)",
+          minHeight: "100vh",
+          backgroundColor: "#e3f2fd",
         }}
       >
-        <CircularProgress size={60} sx={{ color: "#5e35b1" }} />
+        <CircularProgress />
       </Box>
     );
   }
@@ -94,117 +90,158 @@ const handleUpdateProfile = async () => {
 
   return (
     <>
-      {/* <Navbar /> */}
-      <Container sx={{ mt: 12, mb: 8, display: "flex", justifyContent: "center" }}>
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          style={{ width: "100%", maxWidth: 700 }}
-        >
+      <Box
+        sx={{
+          backgroundColor: "#e3f2fd",
+          minHeight: "100vh",
+          py: 4,
+        }}
+      >
+        <Container maxWidth="md">
           <Paper
-            elevation={10}
+            elevation={0}
             sx={{
-              p: { xs: 4, sm: 6 },
-              borderRadius: 6,
-              backdropFilter: "blur(12px)",
-              background:
-                "linear-gradient(145deg, rgba(255,255,255,0.9), rgba(240,240,255,0.8))",
+              p: { xs: 3, sm: 4 },
+              borderRadius: 2,
+              backgroundColor: "#ffffff",
+              boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
+              position: "relative",
             }}
           >
-            <Grid container spacing={4} alignItems="center" justifyContent="center">
-              <Grid item xs={12} md={4} textAlign="center">
-                <Avatar
-                  sx={{
-                    width: 130,
-                    height: 130,
-                    fontSize: "3rem",
-                    mx: "auto",
-                    bgcolor: "#6d28d9",
-                  }}
-                >
-                  {user.name?.charAt(0).toUpperCase()}
-                </Avatar>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, color: "#1e293b" }}>
+                Profile
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<EditIcon />}
+                onClick={() => setOpenEdit(true)}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: 1,
+                  backgroundColor: "#1976d2",
+                  "&:hover": {
+                    backgroundColor: "#1565c0",
+                  },
+                }}
+              >
+                Edit
+              </Button>
+            </Box>
 
-                <Typography variant="h5" sx={{ mt: 2, fontWeight: 700 }}>
-                  {user.name}
-                </Typography>
-
-                <Typography variant="body2" sx={{ color: "#666" }}>
-                  {user.email}
-                </Typography>
-
-                <Button
-                  startIcon={<PencilLine />}
-                  variant="contained"
-                  sx={{ mt: 2, borderRadius: "30px" }}
-                  onClick={() => setOpenEdit(true)}
-                >
-                  Edit Profile
-                </Button>
-              </Grid>
-
-              <Grid item xs={12} md={8}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 3, mb: 3 }}>
+              <Avatar
+                sx={{
+                  width: 80,
+                  height: 80,
+                  fontSize: "2rem",
+                  backgroundColor: "#1976d2",
+                  color: "white",
+                  fontWeight: 600,
+                }}
+              >
+                {user.name?.charAt(0).toUpperCase()}
+              </Avatar>
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b" }}>
+                    {user.name}
+                  </Typography>
                   <Chip
-                    icon={<BadgeCheck size={18} />}
-                    label={user.isVerified ? "Verified" : "Not Verified"}
+                    label="USER"
+                    size="small"
                     sx={{
-                      bgcolor: user.isVerified ? "#16a34a" : "#dc2626",
+                      backgroundColor: "#1976d2",
                       color: "white",
                       fontWeight: 600,
-                    }}
-                  />
-                  <Chip
-                    icon={<Users size={18} />}
-                    label={`Free Connections: ${user.freeConnectionLeft ?? 0}`}
-                    sx={{
-                      bgcolor: "#3b82f6",
-                      color: "white",
-                      fontWeight: 600,
+                      height: 20,
+                      fontSize: "0.7rem",
                     }}
                   />
                 </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
+                  <EmailIcon sx={{ fontSize: 16, color: "#64748b" }} />
+                  <Typography variant="body2" sx={{ color: "#64748b" }}>
+                    {user.email}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
 
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="body1" fontWeight={600}>
-                    <Code size={18} /> Skills Have:
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" sx={{ color: "#64748b", mb: 0.5 }}>
+                    Skills Have
                   </Typography>
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                     {user.skillsHave?.length ? (
                       user.skillsHave.map((skill, i) => (
-                        <Chip key={i} label={skill} sx={{ bgcolor: "#a855f7", color: "white" }} />
+                        <Chip
+                          key={i}
+                          label={skill}
+                          size="small"
+                          sx={{
+                            backgroundColor: "#e3f2fd",
+                            color: "#1976d2",
+                            fontWeight: 500,
+                          }}
+                        />
                       ))
                     ) : (
-                      <Typography variant="body2">None</Typography>
+                      <Typography variant="body2" sx={{ color: "#64748b" }}>
+                        No skills added
+                      </Typography>
                     )}
                   </Box>
                 </Box>
+              </Grid>
 
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="body1" fontWeight={600}>
-                    <Target size={18} /> Skills Want:
+              <Grid item xs={12}>
+                <Box>
+                  <Typography variant="body2" sx={{ color: "#64748b", mb: 0.5 }}>
+                    Skills Want
                   </Typography>
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                     {user.skillsWant?.length ? (
                       user.skillsWant.map((skill, i) => (
-                        <Chip key={i} label={skill} sx={{ bgcolor: "#f97316", color: "white" }} />
+                        <Chip
+                          key={i}
+                          label={skill}
+                          size="small"
+                          sx={{
+                            backgroundColor: "#e3f2fd",
+                            color: "#1976d2",
+                            fontWeight: 500,
+                          }}
+                        />
                       ))
                     ) : (
-                      <Typography variant="body2">None</Typography>
+                      <Typography variant="body2" sx={{ color: "#64748b" }}>
+                        No skills added
+                      </Typography>
                     )}
                   </Box>
                 </Box>
               </Grid>
             </Grid>
           </Paper>
-        </motion.div>
-      </Container>
+        </Container>
+      </Box>
 
-      {/* EDIT PROFILE DIALOG */}
-      <Dialog open={openEdit} onClose={() => setOpenEdit(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Edit Profile</DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+      <Dialog
+        open={openEdit}
+        onClose={() => setOpenEdit(false)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, color: "#1e293b" }}>Edit Profile</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
           <TextField
             label="Name"
             fullWidth
@@ -216,17 +253,34 @@ const handleUpdateProfile = async () => {
             fullWidth
             value={formData.skillsHave}
             onChange={(e) => setFormData({ ...formData, skillsHave: e.target.value })}
+            placeholder="e.g., React, JavaScript, Python"
           />
           <TextField
             label="Skills Want (comma separated)"
             fullWidth
             value={formData.skillsWant}
             onChange={(e) => setFormData({ ...formData, skillsWant: e.target.value })}
+            placeholder="e.g., Node.js, TypeScript, AWS"
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenEdit(false)}>Cancel</Button>
-          <Button onClick={handleUpdateProfile} variant="contained" color="primary">
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setOpenEdit(false)}
+            sx={{ textTransform: "none", color: "#64748b" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleUpdateProfile}
+            variant="contained"
+            sx={{
+              textTransform: "none",
+              backgroundColor: "#1976d2",
+              "&:hover": {
+                backgroundColor: "#1565c0",
+              },
+            }}
+          >
             Save
           </Button>
         </DialogActions>

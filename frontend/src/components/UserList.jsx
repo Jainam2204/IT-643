@@ -7,7 +7,10 @@ import {
   Avatar,
   Typography,
   Divider,
+  IconButton,
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import GroupIcon from '@mui/icons-material/Group';
 
 function UserList({ users, selectedUser, onSelectUser, loading, error }) {
   return (
@@ -17,7 +20,7 @@ function UserList({ users, selectedUser, onSelectUser, loading, error }) {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: '#f5f5f5',
+        bgcolor: '#ffffff',
         borderRight: '1px solid #e0e0e0',
         flexShrink: 0,
       }}
@@ -26,13 +29,24 @@ function UserList({ users, selectedUser, onSelectUser, loading, error }) {
         sx={{
           px: 2,
           py: 1.5,
-          bgcolor: '#1565c0',
-          color: '#ffffff',
+          bgcolor: '#ffffff',
+          borderBottom: '1px solid #e0e0e0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
-        <Typography variant="subtitle1" fontWeight={600}>
-          Chat
+        <Typography variant="subtitle1" fontWeight={600} sx={{ color: '#1e293b' }}>
+          Chats
         </Typography>
+        <Box>
+          <IconButton size="small" sx={{ color: '#1976d2' }}>
+            <GroupIcon fontSize="small" />
+          </IconButton>
+          <IconButton size="small" sx={{ color: '#1976d2' }}>
+            <AddIcon fontSize="small" />
+          </IconButton>
+        </Box>
       </Box>
 
       {loading ? (
@@ -42,7 +56,7 @@ function UserList({ users, selectedUser, onSelectUser, loading, error }) {
           alignItems="center"
           justifyContent="center"
         >
-          <Typography variant="body2" sx={{ color: '#1565c0' }}>
+          <Typography variant="body2" sx={{ color: '#64748b' }}>
             Loading users...
           </Typography>
         </Box>
@@ -66,10 +80,10 @@ function UserList({ users, selectedUser, onSelectUser, loading, error }) {
           justifyContent="center"
           px={2}
         >
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: '#64748b' }}>
             No users available
           </Typography>
-          <Typography variant="caption" color="text.disabled" mt={0.5}>
+          <Typography variant="caption" sx={{ color: '#94a3b8', mt: 0.5 }}>
             Register another user to start chatting
           </Typography>
         </Box>
@@ -92,20 +106,21 @@ function UserList({ users, selectedUser, onSelectUser, loading, error }) {
                   selected={isSelected}
                   sx={{
                     alignItems: 'center',
-                    bgcolor: isSelected ? '#ffffff' : '#f5f5f5',
+                    bgcolor: isSelected ? '#e3f2fd' : '#ffffff',
+                    borderLeft: isSelected ? '4px solid #1976d2' : '4px solid transparent',
                     '&.Mui-selected:hover': {
                       bgcolor: '#e3f2fd',
                     },
                     '&:hover': {
-                      bgcolor: '#e3f2fd',
+                      bgcolor: '#f8fafc',
                     },
-                    py: 1.2,
+                    py: 1.5,
                   }}
                 >
                   <ListItemAvatar>
                     <Avatar
                       sx={{
-                        bgcolor: '#1565c0',
+                        bgcolor: '#1976d2',
                         color: '#ffffff',
                         fontWeight: 600,
                       }}
@@ -125,7 +140,7 @@ function UserList({ users, selectedUser, onSelectUser, loading, error }) {
                       noWrap
                       sx={{
                         fontWeight: 500,
-                        color: '#212121',
+                        color: '#1e293b',
                       }}
                     >
                       {user.name}

@@ -1,5 +1,6 @@
 import React from "react";
-import { Box, Typography, Link } from "@mui/material";
+import { Box, Typography, Link, Button } from "@mui/material";
+import DownloadIcon from "@mui/icons-material/Download";
 
 function MessageBubble({ message, isOwnMessage }) {
   const time = new Date(message.createdAt).toLocaleTimeString([], {
@@ -42,51 +43,61 @@ function MessageBubble({ message, isOwnMessage }) {
       <Box
         sx={{
           maxWidth: "70%",
-          px: 1.5,
-          py: 1,
+          px: 2,
+          py: 1.5,
           borderRadius: 2,
-          boxShadow: 1,
           wordBreak: "break-word",
-          bgcolor: isOwnMessage ? "primary.main" : "#ffffff",
-          color: isOwnMessage ? "#ffffff" : "#1f2937",
+          bgcolor: isOwnMessage ? "#1976d2" : "#ffffff",
+          color: isOwnMessage ? "#ffffff" : "#1e293b",
+          boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.1)",
         }}
       >
         {isFile ? (
-          <Box display="flex" flexDirection="column" gap={0.5}>
-            <Link
-              href={message.fileUrl}
-              onClick={handleFileDownload}
-              target="_blank"
-              rel="noopener noreferrer"
-              underline="always"
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                color: isOwnMessage ? "#ffffff" : "primary.main",
-                fontWeight: 500,
-                "&:hover": {
-                  color: isOwnMessage ? "primary.light" : "primary.dark",
-                },
-              }}
-            >
-              <span>{getFileIcon()}</span>
-              <span>{message.fileName || "Open file"}</span>
-            </Link>
-
+          <Box display="flex" flexDirection="column" gap={1}>
+            <Box display="flex" alignItems="center" gap={1}>
+              <span style={{ fontSize: "1.2rem" }}>{getFileIcon()}</span>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: isOwnMessage ? "#ffffff" : "#1e293b",
+                  fontWeight: 500,
+                }}
+              >
+                {message.fileName || "File"}
+              </Typography>
+            </Box>
             {message.content && message.content !== message.fileName && (
               <Typography
-                variant="caption"
+                variant="body2"
                 sx={{
-                  color: isOwnMessage ? "primary.light" : "text.secondary",
+                  color: isOwnMessage ? "rgba(255,255,255,0.9)" : "#64748b",
                 }}
               >
                 {message.content}
               </Typography>
             )}
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<DownloadIcon />}
+              onClick={handleFileDownload}
+              sx={{
+                textTransform: "none",
+                borderRadius: 1,
+                backgroundColor: isOwnMessage ? "#ffffff" : "#1976d2",
+                color: isOwnMessage ? "#1976d2" : "#ffffff",
+                "&:hover": {
+                  backgroundColor: isOwnMessage ? "#f5f5f5" : "#1565c0",
+                },
+              }}
+            >
+              Download File
+            </Button>
           </Box>
         ) : (
-          <Typography variant="body2">{message.content}</Typography>
+          <Typography variant="body2" sx={{ color: isOwnMessage ? "#ffffff" : "#1e293b" }}>
+            {message.content}
+          </Typography>
         )}
 
         <Typography
@@ -95,8 +106,8 @@ function MessageBubble({ message, isOwnMessage }) {
             display: "block",
             mt: 0.5,
             textAlign: "right",
-            color: isOwnMessage ? "primary.light" : "text.secondary",
-            fontSize: "10px",
+            color: isOwnMessage ? "rgba(255,255,255,0.8)" : "#64748b",
+            fontSize: "0.75rem",
           }}
         >
           {time}
