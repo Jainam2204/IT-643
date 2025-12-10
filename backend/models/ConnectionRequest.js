@@ -19,7 +19,6 @@ const connectionRequestSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-// Indexes for efficient queries
 connectionRequestSchema.index({ senderId: 1, receiverId: 1 });
 connectionRequestSchema.index({ receiverId: 1, status: 1 });
 connectionRequestSchema.index({ senderId: 1, status: 1 });

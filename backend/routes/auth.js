@@ -1,10 +1,7 @@
 const express = require("express");
 const authMiddleware = require("../middleware/authMiddleware");
 const { 
-  registerValidationRules, 
-  loginValidationRules, 
-  verificationValidationRules, 
-  validate 
+useValidation
 } = require("../utils/validators");
 const { 
     register,
@@ -16,9 +13,9 @@ const {
 
 const router = express.Router();
 
-router.post("/register", registerValidationRules(), validate, register);
-router.post("/login", loginValidationRules(), validate, login);
+router.post("/register", useValidation("register") ,register);
+router.post("/login", useValidation("login") , login);
 router.get("/me", authMiddleware, me);
-router.post("/verify", verificationValidationRules(), validate, verifyEmail);
+router.post("/verify", useValidation("verification"), verifyEmail);
 router.post("/logout", logoutUser);
 module.exports = router;
