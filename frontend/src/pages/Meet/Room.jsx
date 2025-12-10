@@ -21,6 +21,7 @@ export default function MeetingRoom() {
   const peersRef = useRef({}); // socketId -> { pc, stream, remoteReady, userName }
   const candidateQueueRef = useRef({}); // socketId -> RTCIceCandidate[]
   const [localStream, setLocalStream] = useState(null);
+  const localStreamRef = useRef(null); // Ref to track current stream for socket handlers
   const [localUserName, setLocalUserName] = useState("");
   const socketRef = useRef(null);
   const navigate = useNavigate();
@@ -179,67 +180,95 @@ export default function MeetingRoom() {
   const createPeerConnection = (targetSocketId) => {
     const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
     
-    // Get current stream (could be camera or screen share)
-    const currentStream = isScreenSharingRef.current && screenStreamRef.current 
-      ? screenStreamRef.current 
-      : localStream;
-    
-    // Add tracks from current stream if available
-    if (currentStream) {
-      // Note: This is called during connection setup, async handling is done in the caller
-      addTracksToPeerConnection(pc, currentStream).catch(err => {
-        console.error("Error adding tracks during peer connection creation:", err);
-      });
-    }
+    // Don't add tracks here - they will be added explicitly by callers before creating offers
+    // This avoids race conditions where offers are created before tracks are added
     
     // Handle remote tracks - this can fire multiple times for different tracks
     pc.ontrack = (event) => {
-      console.log("Received track event:", event.track.kind, "from", targetSocketId);
-      const [stream] = event.streams;
+      console.log("Received track event:", event.track.kind, "from", targetSocketId, event.track);
       
-      if (!stream) return;
+      const track = event.track;
+      if (!track) return;
       
-      // Update or merge streams
-      const existingPeer = peersRef.current[targetSocketId];
-      if (existingPeer && existingPeer.stream) {
-        // Merge tracks from new stream into existing stream
-        stream.getTracks().forEach((track) => {
-          const existingTrack = existingPeer.stream.getTracks().find(
-            (t) => t.kind === track.kind && t.id !== track.id
-          );
-          if (!existingTrack) {
-            existingPeer.stream.addTrack(track);
-          }
-        });
-      } else {
-        // First stream for this peer
-        if (peersRef.current[targetSocketId]) {
-          peersRef.current[targetSocketId].stream = stream;
-        }
+      // Get or create a dedicated stream for this peer
+      let peerStream = peersRef.current[targetSocketId]?.stream;
+      
+      if (!peerStream) {
+        // Create a new MediaStream for this peer
+        peerStream = new MediaStream();
+        peersRef.current[targetSocketId] = {
+          ...peersRef.current[targetSocketId],
+          stream: peerStream,
+        };
       }
       
+      // Check if this exact track is already in the stream
+      const existingTrackWithSameId = peerStream.getTracks().find(t => t.id === track.id);
+      if (existingTrackWithSameId) {
+        // Track already exists, skip
+        console.log(`Track ${track.kind} with id ${track.id} already in stream for ${targetSocketId}`);
+        return;
+      }
+      
+      // When a new track of the same kind arrives (e.g., camera after screen share),
+      // remove the old track of that kind first to avoid showing both
+      const existingTracksOfSameKind = peerStream.getTracks().filter(t => t.kind === track.kind && t.id !== track.id);
+      if (existingTracksOfSameKind.length > 0) {
+        console.log(`Replacing ${existingTracksOfSameKind.length} existing ${track.kind} track(s) with new one for ${targetSocketId}`);
+        existingTracksOfSameKind.forEach(oldTrack => {
+          peerStream.removeTrack(oldTrack);
+          // Stop the old track if it's still active
+          if (oldTrack.readyState !== 'ended') {
+            oldTrack.stop();
+          }
+        });
+      }
+      
+      // Add the new track to our peer stream
+      peerStream.addTrack(track);
+      console.log(`Added ${track.kind} track to peer stream for ${targetSocketId}`);
+      
+      // Update state with the stream
       setPeers((prev) => {
         const currentPeer = prev[targetSocketId] || {};
         return {
           ...prev,
           [targetSocketId]: { 
             ...currentPeer, 
-            stream: stream, 
+            stream: peerStream, 
             pc 
           },
         };
       });
       
-      // Update video element when stream arrives
-      setTimeout(() => {
-        const videoEl = remoteVideoRefs.current[targetSocketId];
-        if (videoEl) {
-          const peerStream = peersRef.current[targetSocketId]?.stream || stream;
-          if (peerStream && videoEl.srcObject !== peerStream) {
-            videoEl.srcObject = peerStream;
-          }
-        }
-      }, 100);
+      // Immediately update video element when track arrives
+      const videoEl = remoteVideoRefs.current[targetSocketId];
+      if (videoEl && peerStream) {
+        // Force update the srcObject to ensure the new track is displayed
+        videoEl.srcObject = peerStream;
+        console.log(`Set video element srcObject for ${targetSocketId} with ${peerStream.getTracks().length} tracks`);
+        // Force play
+        videoEl.play().catch((err) => {
+          console.error("Error playing video after track added:", err);
+        });
+      }
+      
+      // Also handle track ended event
+      track.onended = () => {
+        console.log(`Track ${track.kind} ended for ${targetSocketId}`);
+        peerStream.removeTrack(track);
+        // Update state when track ends
+        setPeers((prev) => {
+          const currentPeer = prev[targetSocketId] || {};
+          return {
+            ...prev,
+            [targetSocketId]: { 
+              ...currentPeer, 
+              stream: peerStream
+            },
+          };
+        });
+      };
     };
     
     // ICE candidate handling
@@ -271,12 +300,18 @@ export default function MeetingRoom() {
       }
     };
     
-    peersRef.current[targetSocketId] = {
-      pc,
-      stream: null,
-      remoteReady: false,
-      userName: peersRef.current[targetSocketId]?.userName || "",
-    };
+    // Initialize peer data if not exists
+    if (!peersRef.current[targetSocketId]) {
+      peersRef.current[targetSocketId] = {
+        pc,
+        stream: null, // Will be created in ontrack
+        remoteReady: false,
+        userName: "",
+      };
+    } else {
+      // Update existing peer with new PC
+      peersRef.current[targetSocketId].pc = pc;
+    }
     return pc;
   };
 
@@ -320,21 +355,36 @@ export default function MeetingRoom() {
       }
 
       if (!mounted) return;
-      if (stream) {
-        setLocalStream(stream);
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
+      if (!stream) {
+        toast.error("Failed to get media stream. Please check permissions.");
+        return;
+      }
+      
+      // Set local stream first (both state and ref)
+      setLocalStream(stream);
+      localStreamRef.current = stream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
       }
 
       // Connect socket
       // cookie-based socket, no token
-const s = getSocket();
-socketRef.current = s;
-
+      const s = getSocket();
+      socketRef.current = s;
 
       // Receive list of current peers
       s.on("rtc-room-users", async ({ peers }) => {
+        // Ensure we have localStream before creating peer connections
+        // Use ref to get the most up-to-date stream
+        const currentStream = isScreenSharingRef.current && screenStreamRef.current 
+          ? screenStreamRef.current 
+          : localStreamRef.current;
+        
+        if (!currentStream) {
+          console.error("No local stream available when receiving room users");
+          return;
+        }
+        
         for (const targetSocketId of peers) {
           let pc = peersRef.current[targetSocketId]?.pc;
           if (!pc) {
@@ -342,32 +392,27 @@ socketRef.current = s;
             peersRef.current[targetSocketId].pc = pc;
           }
           
-          // Ensure tracks are added before creating offer
-          const currentStream = isScreenSharingRef.current && screenStreamRef.current 
-            ? screenStreamRef.current 
-            : localStream;
+          // Always ensure tracks are added before creating offer
+          await addTracksToPeerConnection(pc, currentStream);
           
-          if (currentStream) {
-            const trackAdded = await addTracksToPeerConnection(pc, currentStream);
-            // If tracks were just added, we need to renegotiate
-            if (trackAdded && pc.signalingState !== "stable") {
-              // Wait for stable state before creating new offer
-              pc.addEventListener("signalingstatechange", async () => {
-                if (pc.signalingState === "stable") {
-                  try {
-                    const offer = await pc.createOffer();
-                    await pc.setLocalDescription(offer);
-                    s.emit("rtc-offer", { targetSocketId, description: offer, roomId });
-                  } catch (err) {
-                    console.error("Error creating offer after track addition:", err);
+          // Wait for stable state if needed
+          if (pc.signalingState !== "stable") {
+            await new Promise((resolve) => {
+              if (pc.signalingState === "stable") {
+                resolve();
+              } else {
+                const handler = () => {
+                  if (pc.signalingState === "stable") {
+                    pc.removeEventListener("signalingstatechange", handler);
+                    resolve();
                   }
-                }
-              }, { once: true });
-              continue;
-            }
+                };
+                pc.addEventListener("signalingstatechange", handler);
+              }
+            });
           }
           
-          // Create offer with current tracks
+          // Create offer with tracks
           try {
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
@@ -388,7 +433,7 @@ socketRef.current = s;
           // Ensure tracks are added if stream is available
           const currentStream = isScreenSharingRef.current && screenStreamRef.current 
             ? screenStreamRef.current 
-            : localStream;
+            : localStreamRef.current; // Use ref to get current stream
           if (currentStream) {
             await addTracksToPeerConnection(pc, currentStream);
           }
@@ -412,11 +457,15 @@ socketRef.current = s;
         // Ensure our tracks are added before answering
         const currentStream = isScreenSharingRef.current && screenStreamRef.current 
           ? screenStreamRef.current 
-          : localStream;
+          : localStreamRef.current; // Use ref to get current stream
         
-        if (currentStream) {
-          await addTracksToPeerConnection(pc, currentStream);
+        if (!currentStream) {
+          console.error("No local stream available when handling offer");
+          return;
         }
+        
+        // Always add tracks before answering
+        await addTracksToPeerConnection(pc, currentStream);
         
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(description));
@@ -491,7 +540,8 @@ socketRef.current = s;
         });
       });
 
-      // Join room
+      // Join room only after stream is ready
+      // This ensures we have tracks available when peer connections are created
       s.emit("rtc-join-room", { roomId });
 
       // Share local user info (name) with peers via server
@@ -534,64 +584,85 @@ socketRef.current = s;
   }, [roomId]);
 
   // Update peer connections when localStream becomes available
+  // This handles cases where localStream is set after peer connections are created
   useEffect(() => {
     if (!localStream || isScreenSharingRef.current) return;
     
     // Add tracks to all existing peer connections and renegotiate if needed
-    Object.keys(peersRef.current).forEach(async (socketId) => {
-      const pc = peersRef.current[socketId]?.pc;
-      if (!pc) return;
-      
-      const senders = pc.getSenders();
-      const hasAudio = senders.some((sender) => sender.track && sender.track.kind === "audio");
-      const hasVideo = senders.some((sender) => sender.track && sender.track.kind === "video");
-      const needsAudio = localStream.getAudioTracks().length > 0;
-      const needsVideo = localStream.getVideoTracks().length > 0;
-      
-      // Check if we need to add tracks
-      if ((needsAudio && !hasAudio) || (needsVideo && !hasVideo)) {
-        const trackAdded = await addTracksToPeerConnection(pc, localStream);
+    Promise.all(
+      Object.keys(peersRef.current).map(async (socketId) => {
+        const pc = peersRef.current[socketId]?.pc;
+        if (!pc) return;
         
-        // If tracks were added and connection is established, renegotiate
-        if (trackAdded && pc.signalingState === "stable" && pc.remoteDescription) {
-          try {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            if (socketRef.current) {
-              socketRef.current.emit("rtc-offer", {
-                targetSocketId: socketId,
-                description: offer,
-                roomId,
-              });
+        const senders = pc.getSenders();
+        const hasAudio = senders.some((sender) => sender.track && sender.track.kind === "audio");
+        const hasVideo = senders.some((sender) => sender.track && sender.track.kind === "video");
+        const needsAudio = localStream.getAudioTracks().length > 0;
+        const needsVideo = localStream.getVideoTracks().length > 0;
+        
+        // Check if we need to add tracks
+        if ((needsAudio && !hasAudio) || (needsVideo && !hasVideo)) {
+          const trackAdded = await addTracksToPeerConnection(pc, localStream);
+          
+          // If tracks were added and connection is established, renegotiate
+          if (trackAdded && pc.signalingState === "stable" && pc.remoteDescription) {
+            try {
+              const offer = await pc.createOffer();
+              await pc.setLocalDescription(offer);
+              if (socketRef.current) {
+                socketRef.current.emit("rtc-offer", {
+                  targetSocketId: socketId,
+                  description: offer,
+                  roomId,
+                });
+              }
+            } catch (err) {
+              console.error("Error renegotiating after track addition:", err);
             }
-          } catch (err) {
-            console.error("Error renegotiating after track addition:", err);
           }
         }
-      }
+      })
+    ).catch(err => {
+      console.error("Error updating peer connections with localStream:", err);
     });
   }, [localStream, isScreenSharing, roomId]);
   
-  // Sync ref with state
+  // Sync refs with state
   useEffect(() => {
     isScreenSharingRef.current = isScreenSharing;
   }, [isScreenSharing]);
+  
+  // Sync localStreamRef with localStream state
+  useEffect(() => {
+    localStreamRef.current = localStream;
+  }, [localStream]);
 
   // Update remote video elements when peer streams change
   useEffect(() => {
     Object.entries(peers).forEach(([socketId, peer]) => {
       const videoEl = remoteVideoRefs.current[socketId];
       if (videoEl && peer.stream) {
-        // Force update if stream changed
-        if (videoEl.srcObject !== peer.stream) {
-          videoEl.srcObject = peer.stream;
-        }
+        const tracks = peer.stream.getTracks();
+        const videoTracks = tracks.filter(t => t.kind === 'video');
+        
+        // Always force update the srcObject to ensure latest tracks are displayed
+        // This is important when tracks are replaced (e.g., screen share -> camera)
+        videoEl.srcObject = peer.stream;
+        console.log(`Updated video element srcObject for ${socketId} in useEffect with ${tracks.length} tracks (${videoTracks.length} video)`);
+        
         // Ensure video is playing
-        if (videoEl.paused) {
+        if (videoEl.paused || videoEl.readyState < 2) {
           videoEl.play().catch((err) => {
-            console.error("Error playing remote video:", err);
+            console.error(`Error playing remote video for ${socketId}:`, err);
           });
         }
+        
+        // Log stream info for debugging
+        console.log(`Peer ${socketId} stream has ${tracks.length} tracks:`, 
+          tracks.map(t => `${t.kind} (${t.enabled ? 'enabled' : 'disabled'}, id: ${t.id.substring(0, 8)}...)`));
+      } else if (videoEl && !peer.stream) {
+        // Clear video if no stream
+        videoEl.srcObject = null;
       }
     });
   }, [peers]);
@@ -671,7 +742,8 @@ socketRef.current = s;
             await waitForStable();
             
             // Replace tracks - wait for completion to ensure audio/video are properly restored
-            await addTracksToPeerConnection(pc, localStream);
+            const trackAdded = await addTracksToPeerConnection(pc, localStream);
+            console.log(`Replaced tracks for ${socketId} after stopping screen share, trackAdded: ${trackAdded}`);
             
             // Re-negotiate connection
             try {
@@ -683,6 +755,7 @@ socketRef.current = s;
                   description: offer,
                   roomId,
                 });
+                console.log(`Sent renegotiation offer to ${socketId} after stopping screen share`);
               }
             } catch (err) {
               console.error("Error renegotiating after stopping screen share:", err);
@@ -860,13 +933,32 @@ socketRef.current = s;
             <video
               autoPlay
               playsInline
+              muted={false}
               ref={(el) => {
                 if (el) {
                   remoteVideoRefs.current[sid] = el;
-                  if (p.stream && el.srcObject !== p.stream) {
-                    el.srcObject = p.stream;
+                  if (p.stream) {
+                    if (el.srcObject !== p.stream) {
+                      el.srcObject = p.stream;
+                      console.log(`Set video srcObject in ref callback for ${sid}`);
+                    }
+                    // Ensure it plays
+                    el.play().catch((err) => {
+                      console.error(`Error playing video in ref callback for ${sid}:`, err);
+                    });
+                  } else {
+                    el.srcObject = null;
                   }
+                } else {
+                  // Cleanup
+                  delete remoteVideoRefs.current[sid];
                 }
+              }}
+              onLoadedMetadata={(e) => {
+                console.log(`Video metadata loaded for ${sid}`);
+                e.target.play().catch(err => {
+                  console.error(`Error playing after metadata load for ${sid}:`, err);
+                });
               }}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
