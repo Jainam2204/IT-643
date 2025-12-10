@@ -1,7 +1,7 @@
 const authService = require("../services/authService");
 const { logoutUserService } = require("../services/authService");
-const sendEmail = require("../utils/sendEmail"); // adjust path if different
-const User = require("../models/User");          // you likely already have this
+const sendEmail = require("../utils/sendEmail"); 
+const User = require("../models/User");          
 
 exports.register = async (req, res) => {
   try {
