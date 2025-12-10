@@ -58,7 +58,7 @@ export default function MeetingRoom() {
     candidateQueueRef.current[socketId] = [];
   };
 
-  const addTracksToPeerConnection = (pc, stream, needsRenegotiation = false) => {
+  const addTracksToPeerConnection = async (pc, stream, needsRenegotiation = false) => {
     if (!pc || !stream) return false;
     
     const senders = pc.getSenders();
@@ -90,24 +90,37 @@ export default function MeetingRoom() {
         try {
           pc.addTrack(newAudioTrack, stream);
           trackAdded = true;
+          console.log("Added audio track to peer connection");
         } catch (err) {
           console.error("Error adding audio track:", err);
         }
       } else if (audioSenders[0] && audioSenders[0].track !== newAudioTrack) {
-        // Replace existing audio track
-        audioSenders[0].replaceTrack(newAudioTrack).catch((err) => {
+        // Replace existing audio track - ensure it completes
+        try {
+          await audioSenders[0].replaceTrack(newAudioTrack);
+          trackAdded = true;
+          console.log("Replaced audio track in peer connection");
+        } catch (err) {
           console.error("Error replacing audio track:", err);
           // Fallback: remove and add
           try {
             pc.removeTrack(audioSenders[0]);
             pc.addTrack(newAudioTrack, stream);
             trackAdded = true;
+            console.log("Added audio track via fallback");
           } catch (e) {
             console.error("Error in audio track fallback:", e);
           }
-        });
-        trackAdded = true;
+        }
+      } else if (audioSenders[0] && audioSenders[0].track === newAudioTrack) {
+        // Track is already there, ensure it's enabled
+        if (!newAudioTrack.enabled) {
+          newAudioTrack.enabled = true;
+        }
       }
+    } else if (audioSenders.length > 0) {
+      // Stream has no audio but we have audio senders - keep them (don't remove)
+      // This handles cases where screen share might not have audio
     }
     
     // Handle video tracks
@@ -118,28 +131,38 @@ export default function MeetingRoom() {
         try {
           pc.addTrack(newVideoTrack, stream);
           trackAdded = true;
+          console.log("Added video track to peer connection");
         } catch (err) {
           console.error("Error adding video track:", err);
         }
       } else if (videoSenders[0] && videoSenders[0].track !== newVideoTrack) {
-        // Replace existing video track
-        videoSenders[0].replaceTrack(newVideoTrack).catch((err) => {
+        // Replace existing video track - ensure it completes
+        try {
+          await videoSenders[0].replaceTrack(newVideoTrack);
+          trackAdded = true;
+          console.log("Replaced video track in peer connection");
+        } catch (err) {
           console.error("Error replacing video track:", err);
           // Fallback: remove and add
           try {
             pc.removeTrack(videoSenders[0]);
             pc.addTrack(newVideoTrack, stream);
             trackAdded = true;
+            console.log("Added video track via fallback");
           } catch (e) {
             console.error("Error in video track fallback:", e);
           }
-        });
-        trackAdded = true;
+        }
+      } else if (videoSenders[0] && videoSenders[0].track === newVideoTrack) {
+        // Track is already there, ensure it's enabled
+        if (!newVideoTrack.enabled) {
+          newVideoTrack.enabled = true;
+        }
       }
     }
     
-    // Remove extra video senders if any
-    if (videoSenders.length > videoTracks.length) {
+    // Remove extra video senders if any (but keep at least one if we have video tracks)
+    if (videoSenders.length > Math.max(1, videoTracks.length)) {
       for (let i = videoTracks.length; i < videoSenders.length; i++) {
         try {
           pc.removeTrack(videoSenders[i]);
@@ -163,7 +186,10 @@ export default function MeetingRoom() {
     
     // Add tracks from current stream if available
     if (currentStream) {
-      addTracksToPeerConnection(pc, currentStream);
+      // Note: This is called during connection setup, async handling is done in the caller
+      addTracksToPeerConnection(pc, currentStream).catch(err => {
+        console.error("Error adding tracks during peer connection creation:", err);
+      });
     }
     
     // Handle remote tracks - this can fire multiple times for different tracks
@@ -322,7 +348,7 @@ socketRef.current = s;
             : localStream;
           
           if (currentStream) {
-            const trackAdded = addTracksToPeerConnection(pc, currentStream);
+            const trackAdded = await addTracksToPeerConnection(pc, currentStream);
             // If tracks were just added, we need to renegotiate
             if (trackAdded && pc.signalingState !== "stable") {
               // Wait for stable state before creating new offer
@@ -364,7 +390,7 @@ socketRef.current = s;
             ? screenStreamRef.current 
             : localStream;
           if (currentStream) {
-            addTracksToPeerConnection(pc, currentStream);
+            await addTracksToPeerConnection(pc, currentStream);
           }
         }
         // Send our user info so the newcomer gets our display name
@@ -389,7 +415,7 @@ socketRef.current = s;
           : localStream;
         
         if (currentStream) {
-          addTracksToPeerConnection(pc, currentStream);
+          await addTracksToPeerConnection(pc, currentStream);
         }
         
         try {
@@ -524,7 +550,7 @@ socketRef.current = s;
       
       // Check if we need to add tracks
       if ((needsAudio && !hasAudio) || (needsVideo && !hasVideo)) {
-        const trackAdded = addTracksToPeerConnection(pc, localStream);
+        const trackAdded = await addTracksToPeerConnection(pc, localStream);
         
         // If tracks were added and connection is established, renegotiate
         if (trackAdded && pc.signalingState === "stable" && pc.remoteDescription) {
@@ -609,48 +635,60 @@ socketRef.current = s;
       
       // Switch back to camera stream
       if (localStream) {
-        // Update all peer connections with camera stream
-        Object.keys(peersRef.current).forEach(async (socketId) => {
-          const pc = peersRef.current[socketId]?.pc;
-          if (!pc) return;
-          
-          // Wait for stable state before renegotiating
-          const waitForStable = () => {
-            return new Promise((resolve) => {
-              if (pc.signalingState === "stable") {
-                resolve();
-              } else {
-                const handler = () => {
-                  if (pc.signalingState === "stable") {
-                    pc.removeEventListener("signalingstatechange", handler);
-                    resolve();
-                  }
-                };
-                pc.addEventListener("signalingstatechange", handler);
-              }
-            });
-          };
-          
-          await waitForStable();
-          
-          // Replace tracks
-          addTracksToPeerConnection(pc, localStream);
-          
-          // Re-negotiate connection
-          try {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            if (socketRef.current) {
-              socketRef.current.emit("rtc-offer", {
-                targetSocketId: socketId,
-                description: offer,
-                roomId,
-              });
-            }
-          } catch (err) {
-            console.error("Error renegotiating after stopping screen share:", err);
-          }
+        // Ensure camera stream tracks are enabled
+        const videoTracks = localStream.getVideoTracks();
+        const audioTracks = localStream.getAudioTracks();
+        videoTracks.forEach(track => {
+          if (!track.enabled) track.enabled = true;
         });
+        audioTracks.forEach(track => {
+          if (!track.enabled) track.enabled = true;
+        });
+        
+        // Update all peer connections with camera stream
+        await Promise.all(
+          Object.keys(peersRef.current).map(async (socketId) => {
+            const pc = peersRef.current[socketId]?.pc;
+            if (!pc) return;
+            
+            // Wait for stable state before renegotiating
+            const waitForStable = () => {
+              return new Promise((resolve) => {
+                if (pc.signalingState === "stable") {
+                  resolve();
+                } else {
+                  const handler = () => {
+                    if (pc.signalingState === "stable") {
+                      pc.removeEventListener("signalingstatechange", handler);
+                      resolve();
+                    }
+                  };
+                  pc.addEventListener("signalingstatechange", handler);
+                }
+              });
+            };
+            
+            await waitForStable();
+            
+            // Replace tracks - wait for completion to ensure audio/video are properly restored
+            await addTracksToPeerConnection(pc, localStream);
+            
+            // Re-negotiate connection
+            try {
+              const offer = await pc.createOffer();
+              await pc.setLocalDescription(offer);
+              if (socketRef.current) {
+                socketRef.current.emit("rtc-offer", {
+                  targetSocketId: socketId,
+                  description: offer,
+                  roomId,
+                });
+              }
+            } catch (err) {
+              console.error("Error renegotiating after stopping screen share:", err);
+            }
+          })
+        );
         
         // Update local video
         if (localVideoRef.current) {
@@ -669,48 +707,65 @@ socketRef.current = s;
         setIsScreenSharing(true);
         isScreenSharingRef.current = true;
         
-        // Update all peer connections with screen stream
-        Object.keys(peersRef.current).forEach(async (socketId) => {
-          const pc = peersRef.current[socketId]?.pc;
-          if (!pc) return;
-          
-          // Wait for stable state before renegotiating
-          const waitForStable = () => {
-            return new Promise((resolve) => {
-              if (pc.signalingState === "stable") {
-                resolve();
-              } else {
-                const handler = () => {
-                  if (pc.signalingState === "stable") {
-                    pc.removeEventListener("signalingstatechange", handler);
-                    resolve();
-                  }
-                };
-                pc.addEventListener("signalingstatechange", handler);
-              }
-            });
-          };
-          
-          await waitForStable();
-          
-          // Replace tracks
-          addTracksToPeerConnection(pc, screenStream);
-          
-          // Re-negotiate connection
-          try {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            if (socketRef.current) {
-              socketRef.current.emit("rtc-offer", {
-                targetSocketId: socketId,
-                description: offer,
-                roomId,
-              });
-            }
-          } catch (err) {
-            console.error("Error renegotiating after starting screen share:", err);
+        // Create a combined stream: screen video + camera audio (if screen doesn't have audio)
+        let streamToUse = screenStream;
+        const screenHasAudio = screenStream.getAudioTracks().length > 0;
+        
+        // If screen share doesn't have audio and we have a camera stream with audio, combine them
+        if (!screenHasAudio && localStream) {
+          const cameraAudioTracks = localStream.getAudioTracks();
+          if (cameraAudioTracks.length > 0) {
+            // Create a new MediaStream with screen video and camera audio
+            streamToUse = new MediaStream();
+            screenStream.getVideoTracks().forEach(track => streamToUse.addTrack(track));
+            cameraAudioTracks.forEach(track => streamToUse.addTrack(track));
           }
-        });
+        }
+        
+        // Update all peer connections with screen stream
+        await Promise.all(
+          Object.keys(peersRef.current).map(async (socketId) => {
+            const pc = peersRef.current[socketId]?.pc;
+            if (!pc) return;
+            
+            // Wait for stable state before renegotiating
+            const waitForStable = () => {
+              return new Promise((resolve) => {
+                if (pc.signalingState === "stable") {
+                  resolve();
+                } else {
+                  const handler = () => {
+                    if (pc.signalingState === "stable") {
+                      pc.removeEventListener("signalingstatechange", handler);
+                      resolve();
+                    }
+                  };
+                  pc.addEventListener("signalingstatechange", handler);
+                }
+              });
+            };
+            
+            await waitForStable();
+            
+            // Replace tracks - wait for completion
+            await addTracksToPeerConnection(pc, streamToUse);
+            
+            // Re-negotiate connection
+            try {
+              const offer = await pc.createOffer();
+              await pc.setLocalDescription(offer);
+              if (socketRef.current) {
+                socketRef.current.emit("rtc-offer", {
+                  targetSocketId: socketId,
+                  description: offer,
+                  roomId,
+                });
+              }
+            } catch (err) {
+              console.error("Error renegotiating after starting screen share:", err);
+            }
+          })
+        );
         
         // Update local video
         if (localVideoRef.current) {

@@ -272,7 +272,7 @@ const Connections = () => {
   const [reportTarget, setReportTarget] = useState(null);
   const [reportedUsers, setReportedUsers] = useState({}); // { userId: true }
 
-  // Meeting-related state
+  // Meeting-related state - track specific connection ID that's creating a meeting
   const [creatingMeetingId, setCreatingMeetingId] = useState(null);
 
   const navigate = useNavigate();
@@ -336,7 +336,8 @@ const Connections = () => {
     }
 
     try {
-      setCreatingMeetingId("creating");
+      // Track the specific connection ID that's creating a meeting
+      setCreatingMeetingId(inviteeId);
 
       const res = await api.post("/meetings", {
         title: "",
@@ -496,9 +497,9 @@ const Connections = () => {
                                 "&:hover": { backgroundColor: "#1259a3" },
                               }}
                               onClick={() => handleStartMeeting(conn._id)}
-                              disabled={creatingMeetingId === "creating"}
+                              disabled={creatingMeetingId === conn._id}
                             >
-                              {creatingMeetingId === "creating"
+                              {creatingMeetingId === conn._id
                                 ? "Starting..."
                                 : "Meet"}
                             </Button>
