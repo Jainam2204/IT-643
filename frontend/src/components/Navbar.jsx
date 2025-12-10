@@ -34,7 +34,7 @@ const Navbar = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const navigate = useNavigate();
-  const navItems = ["Dashboard", "Profile", "Connections", "Chat", "Subscription"];
+  const navItems = ["Dashboard", "Connections", "Chat", "Subscription"];
   const { meetingNotifications, removeMeetingNotification } =
     useNotifications();
 
@@ -60,21 +60,20 @@ const Navbar = () => {
     removeMeetingNotification(meetingId);
   };
 
-  // ✅ Centralized Logout Function
   const handleLogout = async () => {
-  try {
-    await api.post("/auth/logout"); // ✅ cookie auto-sent
+    try {
+      await api.post("/auth/logout");
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
-    toast.success("Logged out successfully!");
-    navigate("/login");
-  } catch (err) {
-    console.error("Logout failed:", err);
-    toast.error("Logout failed");
-  }
-};
+      toast.success("Logged out successfully!");
+      navigate("/login");
+    } catch (err) {
+      console.error("Logout failed:", err);
+      toast.error("Logout failed");
+    }
+  };
 
 
 
@@ -112,7 +111,7 @@ const Navbar = () => {
               <Typography
                 variant="h6"
                 component="a"
-                href="/"
+                href="/dashboard"
                 sx={{
                   textDecoration: "none",
                   fontWeight: "bold",
@@ -124,13 +123,13 @@ const Navbar = () => {
                 <Box component="span" sx={{ color: "#fbbf24" }}>
                   Skill
                 </Box>
-                Xchange
+                XChange
               </Typography>
             </motion.div>
           </Box>
 
           {/* Search Bar */}
-          <Box
+          {/* <Box
             sx={{
               display: { xs: "none", sm: "flex" },
               alignItems: "center",
@@ -154,7 +153,7 @@ const Navbar = () => {
                 "&::placeholder": { color: "#d9f5e5" },
               }}
             />
-          </Box>
+          </Box> */}
 
           {/* Right Section */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
