@@ -11,6 +11,7 @@ SkillXChange is a modern skill exchange platform that connects users based on co
 - **User Management**: Secure authentication, profile management, and subscription handling
 - **Connection Management**: Send, accept, and manage connection requests
 - **Reporting System**: User reporting and moderation capabilities
+- **Subscription Management**: Recurring subscription plans, payments
 
 ### Technology Stack
 
@@ -46,45 +47,57 @@ graph TB
         A[React Frontend<br/>MUI + Axios]
         A1[Web Browser]
     end
-    
+
     subgraph "API Gateway"
         B[Express.js Server]
         B1[Middleware Chain]
+        W[Webhook Endpoint<br/>/subscription/webhook]
     end
-    
+
     subgraph "Application Layer"
         C[Controllers]
         C1[Services]
         C2[Models]
     end
-    
+
     subgraph "Real-time Layer"
         D[Socket.IO Server]
         D1[WebSocket Connections]
     end
-    
+
     subgraph "Data Layer"
         E[(MongoDB Atlas<br/>Database)]
     end
-    
+
     subgraph "External Services"
         F[Cloudinary<br/>Media Storage]
         G[Brevo<br/>Email Service]
+        R[Razorpay<br/>Subscriptions & Billing]
     end
-    
+
     A --> A1
     A1 -->|HTTP/REST| B
     A1 -->|WebSocket| D
+
     B --> B1
     B1 --> C
+
     C --> C1
     C1 --> C2
     C2 --> E
+
     C1 --> F
     C1 --> G
+    C1 --> R
+
+    R -->|Webhooks| W
+    W --> C1
+
     D --> D1
     D1 --> C1
     D1 --> E
+
+
 ```
 
 ### Frontend Architecture
@@ -305,7 +318,7 @@ graph LR
 | Principle | Where Applied | Benefit |
 |-----------|---------------|---------|
 | **Single Responsibility Principle (SRP)** | Separate controllers for users, messages, auth, meetings, subscriptions - each API performs one job | Easier testing & debugging, clear separation of concerns |
-| **Open/Closed Principle (OCP)** | Modular socket event handlers, extendable conversation/group logic, validation strategies | Add new event types/validation rules without rewriting existing ones |
+| **Open/Closed Principle (OCP)** | Modular socket event handlers, extendable conversation, validation strategies | Add new event types/validation rules without rewriting existing ones |
 | **Separation of Concerns** | Context for state, Socket layer, UI components, API services, backend controllers | Independent development and change without breaking others |
 | **DRY (Don't Repeat Yourself)** | Reusable components: Message, RecipientInfo, ChatProvider, MediaPreviewModal, validation strategies | Reduced errors & code maintenance |
 | **Fail Fast & Validation** | Mongoose model validation & middleware, express-validator | Prevent inconsistent DB states, early error detection |
@@ -334,7 +347,6 @@ Each route module has a single, well-defined responsibility:
 |-------------------|-------------------|-------------|
 | Socket logic spread across components | Centralized socket event handlers in ChatProvider/Context | Cleaner structure, easier maintainability, single source of truth |
 | Re-rendering users on every message | Sorting users based on latest message, optimized rendering | Efficient rendering, better performance, reduced DOM updates |
-| Duplicate logic for group & private chat | Generic message handlers and send/receive utilities | Higher code reusability, reduced duplication, easier maintenance |
 | Message deletion not synced | Added `messageDeletedForEveryone` broadcast event | Instant UI update for all users, consistent state |
 | State became inconsistent on refresh | Implemented `getConversations()` reset mechanism | Stable UI behavior, consistent state after refresh |
 | Inline validation logic | Strategy-based validation system (`useValidation`) | Reusable, maintainable validation, consistent error format |
@@ -457,35 +469,6 @@ The API follows RESTful design principles:
 │   └── GET /status
 └── /report
     └── POST /
-```
-
-### API Versioning Strategy
-
-Currently using unversioned API. Future enhancement: Implement `/api/v1/` prefix for backward compatibility.
-
-### Request/Response Format
-
-**Standard Success Response:**
-```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "Operation successful"
-}
-```
-
-**Standard Error Response:**
-```json
-{
-  "success": false,
-  "error": "Error message",
-  "errors": [
-    {
-      "field": "email",
-      "message": "Invalid email format"
-    }
-  ]
-}
 ```
 
 ### Authentication Strategy
