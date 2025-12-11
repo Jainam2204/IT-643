@@ -17,12 +17,36 @@ export default function VerifyEmailPage() {
   const { userId } = location.state || {};
 
   const [code, setCode] = useState("");
+  const [error, setError] = useState("");
 
   if (!userId) {
     navigate("/signup");
   }
 
+  const handleCodeChange = (e) => {
+    const value = e.target.value;
+    // Only allow numbers and limit to 6 digits
+    if (value === "" || /^\d+$/.test(value)) {
+      if (value.length <= 6) {
+        setCode(value);
+        setError("");
+      }
+    }
+  };
+
   const handleVerify = async () => {
+    if (!code.trim()) {
+      setError("Verification code is required");
+      return;
+    }
+    if (code.length !== 6) {
+      setError("Verification code must be exactly 6 digits");
+      return;
+    }
+    if (!/^\d+$/.test(code)) {
+      setError("Verification code must contain only digits");
+      return;
+    }
     try {
       await api.post("/auth/verify", {
         userId,
@@ -89,12 +113,19 @@ export default function VerifyEmailPage() {
           </Typography>
 
           <TextField
-            placeholder="Enter your verification code"
+            placeholder="Enter 6-digit verification code"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={handleCodeChange}
             fullWidth
             margin="normal"
             size="small"
+            error={!!error}
+            helperText={error}
+            inputProps={{
+              maxLength: 6,
+              inputMode: "numeric",
+              pattern: "[0-9]*",
+            }}
           />
 
           <Button

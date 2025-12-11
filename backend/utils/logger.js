@@ -11,10 +11,8 @@ const logger = winston.createLogger({
     winston.format.json()
   ),
   defaultMeta: { service: 'skillxchange-api' },
-  transports: [
- 
+  transports: process.env.NODE_ENV === 'test' ? [] : [
     new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-
     new winston.transports.File({ filename: 'logs/combined.log' }),
   ],
 });

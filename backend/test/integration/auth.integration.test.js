@@ -7,10 +7,9 @@ const User = require('../../models/User');
 const bcrypt = require('bcryptjs');
 
 // Mock sendEmail to prevent actual email sending during tests
-jest.mock('../../utils/sendEmail', () => ({
-  __esModule: true,
-  default: jest.fn().mockResolvedValue(true),
-}));
+jest.mock('../../utils/sendEmail', () => {
+  return jest.fn().mockResolvedValue(true);
+});
 
 let mongoServer;
 
@@ -18,10 +17,7 @@ describe('Auth Integration Tests', () => {
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(mongoUri);
   });
 
   afterEach(async () => {
@@ -29,15 +25,20 @@ describe('Auth Integration Tests', () => {
   });
 
   afterAll(async () => {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
-    await mongoServer.stop();
+    await User.deleteMany({});
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.dropDatabase();
+      await mongoose.connection.close();
+    }
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
   });
 
-  describe('POST /auth/register', () => {
+  describe('POST /api/auth/register', () => {
     it('should register a new user successfully', async () => {
       const response = await request(app)
-        .post('/auth/register')
+        .post('/api/auth/register')
         .send({
           name: 'John Doe',
           email: 'john@example.com',
@@ -64,7 +65,7 @@ describe('Auth Integration Tests', () => {
       });
 
       const response = await request(app)
-        .post('/auth/register')
+        .post('/api/auth/register')
         .send({
           name: 'New User',
           email: 'existing@example.com',
@@ -78,7 +79,7 @@ describe('Auth Integration Tests', () => {
 
     it('should return 400 for invalid password', async () => {
       const response = await request(app)
-        .post('/auth/register')
+        .post('/api/auth/register')
         .send({
           name: 'John Doe',
           email: 'john@example.com',
@@ -91,7 +92,7 @@ describe('Auth Integration Tests', () => {
     });
   });
 
-  describe('POST /auth/login', () => {
+  describe('POST /api/auth/login', () => {
     it('should login verified user successfully', async () => {
       const hashedPassword = await bcrypt.hash('Password123!', 10);
       await User.create({
@@ -102,7 +103,7 @@ describe('Auth Integration Tests', () => {
       });
 
       const response = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           email: 'test@example.com',
           password: 'Password123!',
@@ -124,7 +125,7 @@ describe('Auth Integration Tests', () => {
       });
 
       const response = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           email: 'test@example.com',
           password: 'WrongPassword',
@@ -134,7 +135,7 @@ describe('Auth Integration Tests', () => {
       expect(response.body).toHaveProperty('message', 'Invalid credentials');
     });
 
-    it('should login unverified user (service allows it)', async () => {
+    it('should return 403 for unverified user', async () => {
       const hashedPassword = await bcrypt.hash('Password123!', 10);
       await User.create({
         name: 'Test User',
@@ -144,18 +145,17 @@ describe('Auth Integration Tests', () => {
       });
 
       const response = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           email: 'unverified@example.com',
           password: 'Password123!',
         });
 
-      // Note: Current service doesn't check isVerified, so login succeeds
-      expect(response.statusCode).toBe(200);
+      expect(response.statusCode).toBe(403);
     });
   });
 
-  describe('POST /auth/verify', () => {
+  describe('POST /api/auth/verify', () => {
     it('should verify email successfully', async () => {
       const user = await User.create({
         name: 'Test User',
@@ -166,7 +166,7 @@ describe('Auth Integration Tests', () => {
       });
 
       const response = await request(app)
-        .post('/auth/verify')
+        .post('/api/auth/verify')
         .send({
           userId: user._id,
           verificationCode: '123456',
@@ -190,7 +190,7 @@ describe('Auth Integration Tests', () => {
       });
 
       const response = await request(app)
-        .post('/auth/verify')
+        .post('/api/auth/verify')
         .send({
           userId: user._id,
           verificationCode: '654321',
@@ -201,7 +201,7 @@ describe('Auth Integration Tests', () => {
     });
   });
 
-  describe('GET /auth/me', () => {
+  describe('GET /api/auth/me', () => {
     it('should return user profile when authenticated', async () => {
       const hashedPassword = await bcrypt.hash('Password123!', 10);
       const user = await User.create({
@@ -215,7 +215,7 @@ describe('Auth Integration Tests', () => {
       const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'test-secret');
 
       const response = await request(app)
-        .get('/auth/me')
+        .get('/api/auth/me')
         .set('Cookie', `authToken=${token}`);
 
       expect(response.statusCode).toBe(200);
@@ -225,16 +225,16 @@ describe('Auth Integration Tests', () => {
 
     it('should return 401 when not authenticated', async () => {
       const response = await request(app)
-        .get('/auth/me');
+        .get('/api/auth/me');
 
       expect(response.statusCode).toBe(401);
     });
   });
 
-  describe('POST /auth/logout', () => {
+  describe('POST /api/auth/logout', () => {
     it('should logout successfully', async () => {
       const response = await request(app)
-        .post('/auth/logout');
+        .post('/api/auth/logout');
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toHaveProperty('success', true);

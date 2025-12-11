@@ -2,14 +2,15 @@ const request = require('supertest');
 const app = require('../app');
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const { MongoMemoryServer } = require('mongodb-memory-server');
 
-describe('POST /auth/verify', () => {
+describe('POST /api/auth/verify', () => {
+  let mongoServer;
+
   beforeAll(async () => {
-    const mongoUri = process.env.MONGO_URI_TEST;
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    mongoServer = await MongoMemoryServer.create();
+    const mongoUri = mongoServer.getUri();
+    await mongoose.connect(mongoUri);
   });
 
   afterEach(async () => {
@@ -17,7 +18,14 @@ describe('POST /auth/verify', () => {
   });
 
   afterAll(async () => {
-    await mongoose.connection.close();
+    await User.deleteMany({});
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.dropDatabase();
+      await mongoose.connection.close();
+    }
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
   });
 
   it('should verify a user with a valid verification code', async () => {
@@ -30,7 +38,7 @@ describe('POST /auth/verify', () => {
     });
 
     const response = await request(app)
-      .post('/auth/verify')
+      .post('/api/auth/verify')
       .send({
         userId: user._id,
         verificationCode: '123456',
@@ -50,7 +58,7 @@ describe('POST /auth/verify', () => {
     });
 
     const response = await request(app)
-      .post('/auth/verify')
+      .post('/api/auth/verify')
       .send({
         userId: user._id,
         verificationCode: '654321',
@@ -62,7 +70,7 @@ describe('POST /auth/verify', () => {
   it('should return 400 for a nonexistent userId', async () => {
     const nonexistentId = new mongoose.Types.ObjectId();
     const response = await request(app)
-      .post('/auth/verify')
+      .post('/api/auth/verify')
       .send({
         userId: nonexistentId,
         verificationCode: '123456',

@@ -23,13 +23,44 @@ export default function LoginForm({ setUser }) {
     email: "",
     password: "",
   });
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      errors.email = "Invalid email format";
+    }
+
+    if (!formData.password) {
+      errors.password = "Password is required";
+    } else if (
+      !/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,14}$/.test(
+        formData.password
+      )
+    ) {
+      errors.password =
+        "Password must be 6-14 chars, include uppercase, lowercase, digit, and special character (@$!%*?&)";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
 
     try {
       const res = await api.post("/auth/login", formData);
@@ -118,6 +149,8 @@ export default function LoginForm({ setUser }) {
               margin="normal"
               required
               size="small"
+              error={!!fieldErrors.email}
+              helperText={fieldErrors.email}
             />
             
               <TextField
@@ -130,6 +163,8 @@ export default function LoginForm({ setUser }) {
                 margin="normal"
                 required
                 size="small"
+                error={!!fieldErrors.password}
+                helperText={fieldErrors.password}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">

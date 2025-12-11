@@ -142,7 +142,7 @@ const getConnectionStatus = async (senderId, receiverId) => {
   if (!request) throw new Error("Request not found");
 
   if (request.status === "pending") {
-    if (request.senderId.toString() === senderId)
+    if (request.senderId.toString() === String(senderId))
       return { status: "pending" };
     else return { status: "received" };
   }
