@@ -9,8 +9,6 @@ import {
   Divider,
   IconButton,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import GroupIcon from '@mui/icons-material/Group';
 
 function UserList({ users, selectedUser, onSelectUser, loading, error }) {
   return (

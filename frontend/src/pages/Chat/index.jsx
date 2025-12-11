@@ -13,7 +13,7 @@ function Chat({ user, setUser }) {
   const [usersError, setUsersError] = useState(null);
 
   useEffect(() => {
-    const socketUrl = import.meta.env.VITE_API_URL;
+    const socketUrl = import.meta.env.VITE_SOCKET_URL;
     
     const newSocket = io(socketUrl, {
       withCredentials: true,
