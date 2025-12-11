@@ -47,55 +47,46 @@ graph TB
         A[React Frontend<br/>MUI + Axios]
         A1[Web Browser]
     end
-
+    
     subgraph "API Gateway"
         B[Express.js Server]
         B1[Middleware Chain]
-        W[Webhook Endpoint<br/>/subscription/webhook]
     end
-
+    
     subgraph "Application Layer"
         C[Controllers]
         C1[Services]
         C2[Models]
     end
-
+    
     subgraph "Real-time Layer"
         D[Socket.IO Server]
         D1[WebSocket Connections]
     end
-
+    
     subgraph "Data Layer"
         E[(MongoDB Atlas<br/>Database)]
     end
-
+    
     subgraph "External Services"
         F[Cloudinary<br/>Media Storage]
         G[Brevo<br/>Email Service]
-        R[Razorpay<br/>Subscriptions & Billing]
     end
-
+    
     A --> A1
     A1 -->|HTTP/REST| B
     A1 -->|WebSocket| D
-
     B --> B1
     B1 --> C
-
     C --> C1
     C1 --> C2
     C2 --> E
-
     C1 --> F
     C1 --> G
-    C1 --> R
-
-    R -->|Webhooks| W
-    W --> C1
-
     D --> D1
     D1 --> C1
     D1 --> E
+
 
 
 ```
