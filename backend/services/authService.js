@@ -22,7 +22,6 @@ exports.registerUser = async ({ name, email, password, skillsHave = [], skillsWa
   return user;
 };
 
-// authService.js
 exports.loginUser = async ({ email, password }) => {
   if (!email || !password) throw new Error("Email and password are required");
 
@@ -32,7 +31,6 @@ exports.loginUser = async ({ email, password }) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new Error("Invalid credentials");
 
-  // 🔴 Not verified → let controller handle it
   if (!user.isVerified) {
     return { unverified: true, user };
   }
@@ -70,14 +68,13 @@ exports.verifyUserEmail = async (userId, verificationCode) => {
 
   return "Email verified successfully!";
 };
-// services/auth.service.js
 
 exports.logoutUserService = (res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    sameSite: "lax",   // use "none" if cross-site with https
-    secure: false,    // true in production with HTTPS
-    path: "/",        // IMPORTANT
+    sameSite: "lax",   
+    secure: false,   
+    path: "/",     
   });
 
   return true;

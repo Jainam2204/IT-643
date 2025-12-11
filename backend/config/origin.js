@@ -1,9 +1,9 @@
 const logger = require("../utils/logger");
 
 const allowedOrigins = [
-  "http://localhost:5173",   // dev frontend
-  process.env.CLIENT_URL,   // prod frontend
-  process.env.FRONTEND_URL, // alternative frontend
+  "http://localhost:5173",
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 const normalizedOrigins = allowedOrigins.map(origin =>

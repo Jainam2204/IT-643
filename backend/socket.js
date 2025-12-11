@@ -4,7 +4,6 @@ const Message = require('./models/Message');
 let ioInstance = null;
 const onlineUsers = new Map();
 
-// Helper function to parse cookies from cookie header
 function parseCookies(cookieHeader) {
   if (!cookieHeader) return {};
   return cookieHeader.split(';').reduce((acc, cookie) => {
@@ -18,11 +17,9 @@ function initializeSocket(io) {
   ioInstance = io;
 
   io.use((socket, next) => {
-    // Parse cookies from handshake headers
     const cookieHeader = socket.handshake.headers.cookie;
     const cookies = parseCookies(cookieHeader);
     
-    // Try to get token from cookie first, then fallback to other methods
     let token = cookies.authToken ||
       socket.handshake.auth?.token ||
       socket.handshake.query?.token ||

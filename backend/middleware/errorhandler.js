@@ -1,4 +1,3 @@
-// middleware/errorHandler.js
 const logger = require("../utils/logger");
 const normalizedOrigins = require("../config/origin");
 
@@ -25,7 +24,6 @@ module.exports = (err, req, res, next) => {
     }
   }
 
-  // Log full error on server
   logger.error("Unhandled error:", {
     error: err.message,
     stack: err.stack,
@@ -35,7 +33,6 @@ module.exports = (err, req, res, next) => {
     origin: origin,
   });
 
-  // Hide stack in production
   const isDevelopment = process.env.NODE_ENV === "development";
 
   res.status(err.status || 500).json({

@@ -51,13 +51,12 @@ const sendConnectionRequest = async (senderId, receiverId) => {
   await sendEmail(
     receiver.email,
     "New Connection Request",
-    `${sender.name} (${sender.email}) sent you a connection request on SkillSwap.`
+    `${sender.name} (${sender.email}) sent you a connection request on SkillXChange.`
   );
 
   return { message: "Connection request sent" };
 };
 
-// ✅ Accept connection
 const acceptConnectionRequest = async (senderId, receiverId) => {
   const request = await ConnectionRequest.findOne({
     senderId,
@@ -81,7 +80,7 @@ const acceptConnectionRequest = async (senderId, receiverId) => {
     status: "active",
   });
 
-  // Check if any of them ran out of connections
+
   if (
     (!senderSubscription && sender.freeConnectionLeft <= 0) ||
     (!receiverSubscription && receiver.freeConnectionLeft <= 0)
@@ -96,7 +95,7 @@ const acceptConnectionRequest = async (senderId, receiverId) => {
     throw new Error("One or both users have reached their limit");
   }
 
-  // Deduct connection limits
+
   if (!senderSubscription) {
     sender.freeConnectionLeft -= 1;
     await sender.save();
@@ -119,7 +118,6 @@ const acceptConnectionRequest = async (senderId, receiverId) => {
   return { message: "Connection request accepted" };
 };
 
-// ❌ Reject connection
 const rejectConnectionRequest = async (senderId, receiverId) => {
   const request = await ConnectionRequest.deleteOne({
     senderId,
@@ -132,7 +130,6 @@ const rejectConnectionRequest = async (senderId, receiverId) => {
   return { message: "Connection request rejected" };
 };
 
-// 🔍 Get request status
 const getConnectionStatus = async (senderId, receiverId) => {
   let request = await ConnectionRequest.findOne({ senderId, receiverId });
   if (!request) {
@@ -153,20 +150,17 @@ const getConnectionStatus = async (senderId, receiverId) => {
   return { status: request.status };
 };
  const getUserConnections = async (userId) => {
-  // find all accepted connections where user is sender or receiver
   const connections = await ConnectionRequest.find({
     $or: [{ senderId: userId }, { receiverId: userId }],
     status: "accepted",
   });
 
-  // extract the IDs of the connected users
   const connectedUserIds = connections.map((conn) =>
     conn.senderId.toString() === userId.toString()
       ? conn.receiverId
       : conn.senderId
   );
 
-  // find and return user data for these connections
   const connectedUsers = await User.find(
     { _id: { $in: connectedUserIds } },
     "name email skillsHave skillsWant"

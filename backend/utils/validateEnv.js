@@ -2,7 +2,6 @@ const Joi = require("joi");
 const logger = require("./logger");
 
 const envSchema = Joi.object({
-  // Core app config
   NODE_ENV: Joi.string()
     .valid("development", "production", "test")
     .default("development"),
@@ -10,18 +9,15 @@ const envSchema = Joi.object({
     .port()
     .default(3000),
 
-  // Database
   MONGODB_URI: Joi.string()
     .required()
     .description("MongoDB connection URI"),
 
-  // Auth / Security
   JWT_SECRET: Joi.string()
     .min(32)
     .required()
     .description("JWT secret key (minimum 32 characters)"),
 
-  // Frontend URLs
   CLIENT_URL: Joi.string()
     .uri()
     .required()

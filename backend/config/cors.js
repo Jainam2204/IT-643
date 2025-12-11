@@ -1,10 +1,9 @@
-// config/cors.js
 const cors = require("cors");
 const normalizedOrigins = require("./origin");
 
 module.exports = cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Postman, curl etc.
+    if (!origin) return callback(null, true); 
 
     const normalizedOrigin = origin.replace(/\/$/, "").toLowerCase();
 

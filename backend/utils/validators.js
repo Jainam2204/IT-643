@@ -1,20 +1,26 @@
 const { body, validationResult } = require("express-validator");
 
+const normalizeSkill = (skill) =>
+  typeof skill === "string" ? skill.trim().toLowerCase() : "";
+
 const registerStrategy = () => [
   body("name")
     .trim()
-    .notEmpty().withMessage("Name is required")
+    .notEmpty()
+    .withMessage("Name is required")
     .matches(/^[A-Za-z]+(?: [A-Za-z]+)*$/)
     .withMessage("Name must contain only letters and spaces"),
 
   body("email")
     .trim()
-    .notEmpty().withMessage("Email is required")
+    .notEmpty()
+    .withMessage("Email is required")
     .matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
     .withMessage("Invalid email format"),
 
   body("password")
-    .notEmpty().withMessage("Password is required")
+    .notEmpty()
+    .withMessage("Password is required")
     .matches(
       /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,14}$/
     )
@@ -25,43 +31,43 @@ const registerStrategy = () => [
   body("skillsHave")
     .isArray({ min: 1, max: 3 })
     .withMessage("You must provide 1 to 3 skills in 'skillsHave'")
+    .customSanitizer((arr) =>
+      (arr || [])
+        .map((s) => normalizeSkill(s))
+        .filter((s) => s !== "")
+    )
     .custom((arr) => {
-      if (
-        !arr.every(
-          (skill) => typeof skill === "string" && skill.trim() !== ""
-        )
-      ) {
-        throw new Error(
-          "Each skill in 'skillsHave' must be a non-empty string"
-        );
+      if (!arr.length) {
+        throw new Error("You must provide at least 1 skill in 'skillsHave'");
       }
-      const lower = arr.map((s) => s.toLowerCase());
-      if (new Set(lower).size !== arr.length) {
+
+      if (new Set(arr).size !== arr.length) {
         throw new Error("'skillsHave' contains duplicate skills");
       }
+
       return true;
     }),
 
   body("skillsWant")
     .isArray({ min: 1, max: 3 })
     .withMessage("You must provide 1 to 3 skills in 'skillsWant'")
+    .customSanitizer((arr) =>
+      (arr || [])
+        .map((s) => normalizeSkill(s))
+        .filter((s) => s !== "")
+    )
     .custom((arr, { req }) => {
-      if (
-        !arr.every(
-          (skill) => typeof skill === "string" && skill.trim() !== ""
-        )
-      ) {
-        throw new Error(
-          "Each skill in 'skillsWant' must be a non-empty string"
-        );
+      if (!arr.length) {
+        throw new Error("You must provide at least 1 skill in 'skillsWant'");
       }
-      const lower = arr.map((s) => s.toLowerCase());
-      if (new Set(lower).size !== arr.length) {
+
+      if (new Set(arr).size !== arr.length) {
         throw new Error("'skillsWant' contains duplicate skills");
       }
 
-      const have = (req.body.skillsHave || []).map((s) => s.toLowerCase());
-      const overlap = lower.filter((skill) => have.includes(skill));
+      const have = (req.body.skillsHave || []).map(normalizeSkill);
+      const overlap = arr.filter((skill) => have.includes(skill));
+
       if (overlap.length > 0) {
         throw new Error(
           `These skills cannot be in both 'skillsHave' and 'skillsWant': ${overlap.join(
@@ -69,6 +75,7 @@ const registerStrategy = () => [
           )}`
         );
       }
+
       return true;
     }),
 ];
@@ -81,9 +88,7 @@ const loginStrategy = () => [
     .matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
     .withMessage("Invalid email format"),
 
-  body("password")
-    .notEmpty()
-    .withMessage("Password is required"),
+  body("password").notEmpty().withMessage("Password is required"),
 ];
 
 const verificationStrategy = () => [
@@ -97,13 +102,11 @@ const verificationStrategy = () => [
     .withMessage("Verification code must contain only digits"),
 ];
 
-
 const strategies = {
   register: registerStrategy,
   login: loginStrategy,
   verification: verificationStrategy,
 };
-
 
 const validateResult = (req, res, next) => {
   const errors = validationResult(req);

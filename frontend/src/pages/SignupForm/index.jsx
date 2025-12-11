@@ -72,8 +72,8 @@ export default function SignupForm() {
       errors.password = "Password is required";
     } else if (
       !/^(?=.\d)(?=.[a-z])(?=.[A-Z])(?=.[@$!%?&])[A-Za-z\d@$!%?&]{6,14}$/.test(
-        formData.password
-      )
+    formData.password
+  )
     ) {
       errors.password =
         "Password must be 6-14 chars, include uppercase, lowercase, digit, and special character";

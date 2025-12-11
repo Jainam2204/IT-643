@@ -53,7 +53,6 @@ server.listen(PORT, () => {
   logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM signal received: closing HTTP server');
   server.close(() => {
@@ -70,20 +69,15 @@ process.on('SIGINT', () => {
   });
 });
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Don't exit in production, log the error instead
   if (process.env.NODE_ENV === 'production') {
-    // Optionally send to error tracking service
   } else {
     process.exit(1);
   }
 });
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
-  // Exit in this case as the application is in an undefined state
   process.exit(1);
 });
