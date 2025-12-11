@@ -20,7 +20,6 @@ import { useNavigate } from "react-router-dom";
 
 const steps = ["Create Account", "Add Skills"];
 
-// helper to normalize skills (same as your backend expectations)
 const normalizeSkill = (skill) =>
   typeof skill === "string" ? skill.trim().toLowerCase() : "";
 
@@ -54,7 +53,6 @@ export default function SignupForm() {
     }
   };
 
-  // Step 0 validation
   const validateStep0 = () => {
     const errors = {};
 
@@ -73,7 +71,7 @@ export default function SignupForm() {
     if (!formData.password) {
       errors.password = "Password is required";
     } else if (
-      !/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%?&])[A-Za-z\d@$!%?&]{6,14}$/.test(
+      !/^(?=.\d)(?=.[a-z])(?=.[A-Z])(?=.[@$!%?&])[A-Za-z\d@$!%?&]{6,14}$/.test(
         formData.password
       )
     ) {
@@ -101,7 +99,6 @@ export default function SignupForm() {
 
   const handleBack = () => setStep((s) => s - 1);
 
-  // Step 1 validation (skills)
   const validateSkillsStep = () => {
     const errors = {};
     const rawHave = formData.skillsHave.split(",");
@@ -193,255 +190,262 @@ export default function SignupForm() {
     }
   };
 
-  const textFieldSx = {
-    "& .MuiOutlinedInput-root": {
-      borderRadius: 1,
-      "& fieldset": { borderColor: "#d0d5dd" },
-      "&:hover fieldset": { borderColor: "#b4b9c2" },
-      "&.Mui-focused fieldset": {
-        borderColor: "#b4b9c2",
-      },
-    },
-  };
-
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        height: "100vh",
+        width: "100vw",
         bgcolor: "#f3f4f8",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         p: { xs: 0, md: 3 },
+        overflow: "hidden",
       }}
     >
       <Paper
         elevation={6}
         sx={{
           width: "100%",
-          maxWidth: "1200px",          // wide on laptop
-          minHeight: { xs: "100vh", md: "85vh" },
+          maxWidth: "1200px",
+          height: { xs: "100vh", md: "90vh" },
           borderRadius: { xs: 0, md: 4 },
           overflow: "hidden",
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
         }}
       >
-        {/* LEFT BLUE PANEL */}
-        {/* LEFT BLUE PANEL – aesthetic, with image + interactive feel */}
-<Box
-  sx={{
-    flex: 1,
-    position: "relative",
-    color: "#fff",
-    overflow: "hidden",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    p: { xs: 4, md: 6 },
-
-    // Background image + gradient overlay
-    "&::before": {
-      content: '""',
-      position: "absolute",
-      inset: 0,
-      backgroundImage:
-        "url('https://images.pexels.com/photos/3861964/pexels-photo-3861964.jpeg?auto=compress&cs=tinysrgb&w=1200')",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      opacity: 0.25,
-    },
-    "&::after": {
-      content: '""',
-      position: "absolute",
-      inset: 0,
-      background:
-        "linear-gradient(145deg, #2155ff 0%, #4f46e5 40%, #0ea5e9 100%)",
-      opacity: 0.9,
-    },
-  }}
->
-  {/* content wrapper so it sits above overlays */}
-  <Box
-    sx={{
-      position: "relative",
-      zIndex: 1,
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      height: "100%",
-      gap: 4,
-    }}
-  >
-    {/* Top section */}
-    <Box>
-   
-
-      <Typography
-        variant="h4"
-        sx={{
-          fontWeight: 700,
-          mb: 2,
-          lineHeight: 1.2,
-        }}
-      >
-        Join SkillXchange
-        <br />
-        and Grow Together.
-      </Typography>
-
-      <Typography variant="body2" sx={{ opacity: 0.95, maxWidth: 420 }}>
-        Match with people who have the skills you want and want the skills you
-        already know. Practice, pair-program, mock interview, and level up
-        together.
-      </Typography>
-    </Box>
-
-    {/* Middle section – “interactive” skill tags */}
-    {/* ✅ MIDDLE SECTION — HOW IT WORKS + STATS */}
-<Box sx={{ mt: 3 }}>
-  {/* How it works */}
-  <Typography
-    variant="caption"
-    sx={{
-      textTransform: "uppercase",
-      letterSpacing: 1,
-      opacity: 0.9,
-    }}
-  >
-    How SkillXchange Works
-  </Typography>
-
-  <Box
-    sx={{
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr 1fr",
-      gap: 2,
-      mt: 1.5,
-      "@media (max-width: 900px)": {
-        gridTemplateColumns: "1fr",
-      },
-    }}
-  >
-    {[
-      { step: "1", text: "Create your profile" },
-      { step: "2", text: "Match with learners" },
-      { step: "3", text: "Swap & grow together" },
-    ].map((item) => (
-      <Box
-        key={item.step}
-        sx={{
-          p: 2,
-          borderRadius: "14px",
-          bgcolor: "rgba(15, 23, 42, 0.35)",
-          border: "1px solid rgba(226, 232, 240, 0.2)",
-          backdropFilter: "blur(8px)",
-          textAlign: "center",
-        }}
-      >
-        <Typography
-          sx={{
-            fontSize: 22,
-            fontWeight: 800,
-            mb: 0.5,
-            background: "linear-gradient(135deg,#fff,#c7d2fe)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          {item.step}
-        </Typography>
-        <Typography variant="body2" sx={{ opacity: 0.9 }}>
-          {item.text}
-        </Typography>
-      </Box>
-    ))}
-  </Box>
-
-  {/* Live platform stats */}
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "space-between",
-      mt: 3,
-      gap: 2,
-      flexWrap: "wrap",
-    }}
-  >
-    {[
-      { value: "5K+", label: "Active Learners" },
-      { value: "1.2K+", label: "Successful Swaps" },
-      { value: "80+", label: "Skills Available" },
-    ].map((stat) => (
-      <Box key={stat.label} sx={{ textAlign: "center", flex: 1 }}>
-        <Typography sx={{ fontSize: 20, fontWeight: 700 }}>
-          {stat.value}
-        </Typography>
-        <Typography variant="caption" sx={{ opacity: 0.85 }}>
-          {stat.label}
-        </Typography>
-      </Box>
-    ))}
-  </Box>
-</Box>
-
-
-    {/* Bottom testimonial / stats */}
-    <Box sx={{ mt: 3 }}>
-      <Typography
-        variant="subtitle2"
-        sx={{
-          textTransform: "uppercase",
-          letterSpacing: 1,
-          mb: 1,
-          fontSize: 11,
-          opacity: 0.9,
-        }}
-      >
-        Trusted by learners like you
-      </Typography>
-
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
         <Box
           sx={{
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            bgcolor: "rgba(15, 23, 42, 0.6)",
+            flex: 1,
+            position: "relative",
+            color: "#fff",
+            overflow: "hidden",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 600,
+            flexDirection: "column",
+            justifyContent: "space-between",
+            p: { xs: 3, md: 5 },
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              display: "none",
+            },
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              inset: 0,
+              backgroundImage:
+                "url('https://images.pexels.com/photos/3861964/pexels-photo-3861964.jpeg?auto=compress&cs=tinysrgb&w=1200')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              opacity: 0.25,
+            },
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(145deg, #2155ff 0%, #4f46e5 40%, #0ea5e9 100%)",
+              opacity: 0.9,
+            },
           }}
         >
-          JS
-        </Box>
-        <Box>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            “I swapped my React skills for DSA guidance. It felt like a
-            dedicated study buddy — but smarter.”
-          </Typography>
-          <Typography variant="caption" sx={{ opacity: 0.85 }}>
-            – SkillXchange user
-          </Typography>
-        </Box>
-      </Box>
-    </Box>
-  </Box>
-</Box>
+          <Box
+            sx={{
+              position: "relative",
+              zIndex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              height: "100%",
+              gap: 4,
+            }}
+          >
+            <Box>
 
 
-        {/* RIGHT WHITE PANEL (FORM) */}
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 700,
+                  mb: 2,
+                  lineHeight: 1.2,
+                  color: "#ffffff",
+                  textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                }}
+              >
+                Join SkillXchange
+                <br />
+                and Grow Together.
+              </Typography>
+
+              <Typography
+                variant="body2"
+                sx={{
+                  opacity: 1,
+                  maxWidth: 420,
+                  color: "#ffffff",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                  fontWeight: 500,
+                }}
+              >
+                Match with people who have the skills you want and want the skills you
+                already know. Practice, pair-program, mock interview, and level up
+                together.
+              </Typography>
+            </Box>
+
+            <Box sx={{ mt: 3 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                  opacity: 1,
+                  color: "#ffffff",
+                  fontWeight: 600,
+                  textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                }}
+              >
+                How SkillXchange Works
+              </Typography>
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: 2,
+                  mt: 1.5,
+                  "@media (max-width: 900px)": {
+                    gridTemplateColumns: "1fr",
+                  },
+                }}
+              >
+                {[
+                  { step: "1", text: "Create your profile" },
+                  { step: "2", text: "Match with learners" },
+                  { step: "3", text: "Swap & grow together" },
+                ].map((item) => (
+                  <Box
+                    key={item.step}
+                    sx={{
+                      p: 2,
+                      borderRadius: "14px",
+                      bgcolor: "rgba(15, 23, 42, 0.35)",
+                      border: "1px solid rgba(226, 232, 240, 0.2)",
+                      backdropFilter: "blur(8px)",
+                      textAlign: "center",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: 22,
+                        fontWeight: 800,
+                        mb: 0.5,
+                        background: "linear-gradient(135deg,#fff,#c7d2fe)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
+                      {item.step}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        opacity: 1,
+                        color: "#ffffff",
+                        fontWeight: 500,
+                        textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                      }}
+                    >
+                      {item.text}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+
+
+            </Box>
+
+
+            <Box sx={{ mt: 3 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                  mb: 1,
+                  fontSize: 11,
+                  opacity: 1,
+                  color: "#ffffff",
+                  fontWeight: 600,
+                  textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                }}
+              >
+                Trusted by learners like you
+              </Typography>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    bgcolor: "rgba(15, 23, 42, 0.6)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 600,
+                  }}
+                >
+                  JS
+                </Box>
+                <Box>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 600,
+                      color: "#ffffff",
+                      textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    "I swapped my React skills for DSA guidance. It felt like a
+                    dedicated study buddy — but smarter."
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      opacity: 1,
+                      color: "#ffffff",
+                      textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    – SkillXchange user
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+
+
         <Box
           sx={{
             flex: 1.1,
             bgcolor: "#ffffff",
-            p: { xs: 4, md: 5 },
+            p: { xs: 3, md: 4 },
             display: "flex",
             flexDirection: "column",
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              display: "none",
+            },
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
           }}
         >
-          {/* Header with login link */}
           <Box
             sx={{
               display: "flex",
@@ -451,46 +455,8 @@ export default function SignupForm() {
               gap: 2,
             }}
           >
-            {/* <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Sign up to{" "}
-              <Box component="span" sx={{ color: "#2155ff" }}>
-                SkillXchange
-              </Box>
-            </Typography> */}
-            {/* <Typography
-              variant="body2"
-              sx={{ display: { xs: "none", sm: "block" } }}
-            >
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                underline="hover"
-                sx={{ color: "#2155ff", fontWeight: 600 }}
-              >
-                Log in here
-              </Link>
-            </Typography> */}
           </Box>
 
-          {/* Mobile login link */}
-          {/* <Typography
-            variant="body2"
-            sx={{
-              mb: 1,
-              display: { xs: "block", sm: "none" },
-            }}
-          >
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              underline="hover"
-              sx={{ color: "#2155ff", fontWeight: 600 }}
-            >
-              Log in here
-            </Link>
-          </Typography> */}
-
-          {/* Stepper */}
           <Stepper
             activeStep={step}
             alternativeLabel
@@ -521,8 +487,9 @@ export default function SignupForm() {
             variant="body2"
             sx={{
               mb: 2,
-              color: "text.secondary",
+              color: "#374151",
               lineHeight: 1.6,
+              fontWeight: 500,
             }}
           >
             Become part of a community where your skills inspire progress —
@@ -531,21 +498,29 @@ export default function SignupForm() {
 
           <Divider sx={{ mb: 3 }} />
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ flex: 1 }}>
+          <Box component="form" onSubmit={handleSubmit} sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
             {step === 0 && (
-              <>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 <TextField
                   label="Full Name"
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
                   fullWidth
-                  margin="normal"
                   required
                   error={!!fieldErrors.fullName}
                   helperText={fieldErrors.fullName}
                   size="small"
-                  sx={textFieldSx}
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      color: "#1f2937",
+                      fontWeight: 500,
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "#6b7280",
+                      fontWeight: 500,
+                    },
+                  }}
                 />
 
                 <TextField
@@ -555,12 +530,20 @@ export default function SignupForm() {
                   value={formData.email}
                   onChange={handleChange}
                   fullWidth
-                  margin="normal"
                   required
                   error={!!fieldErrors.email}
                   helperText={fieldErrors.email}
                   size="small"
-                  sx={textFieldSx}
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      color: "#1f2937",
+                      fontWeight: 500,
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "#6b7280",
+                      fontWeight: 500,
+                    },
+                  }}
                 />
 
                 <TextField
@@ -570,11 +553,20 @@ export default function SignupForm() {
                   value={formData.password}
                   onChange={handleChange}
                   fullWidth
-                  margin="normal"
                   required
                   error={!!fieldErrors.password}
                   helperText={fieldErrors.password}
                   size="small"
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      color: "#1f2937",
+                      fontWeight: 500,
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "#6b7280",
+                      fontWeight: 500,
+                    },
+                  }}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
@@ -589,7 +581,6 @@ export default function SignupForm() {
                       </InputAdornment>
                     ),
                   }}
-                  sx={textFieldSx}
                 />
 
                 <TextField
@@ -599,11 +590,20 @@ export default function SignupForm() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   fullWidth
-                  margin="normal"
                   required
                   error={!!confirmError}
                   helperText={confirmError}
                   size="small"
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      color: "#1f2937",
+                      fontWeight: 500,
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "#6b7280",
+                      fontWeight: 500,
+                    },
+                  }}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
@@ -620,86 +620,80 @@ export default function SignupForm() {
                       </InputAdornment>
                     ),
                   }}
-                  sx={textFieldSx}
                 />
 
-               <Button
-  onClick={handleNext}
-  variant="contained"
-  fullWidth
-  sx={{
-    mt: 3,
-    py: 1.4,
-    fontSize: "1rem",
-    fontWeight: 700,
-    borderRadius: "12px",
-    background: "linear-gradient(135deg, #2155ff, #4f46e5)",
-    textTransform: "none",
-    boxShadow: "0 8px 20px rgba(33, 85, 255, 0.25)",
-    "&:hover": {
-      background: "linear-gradient(135deg, #1645cc, #4338ca)",
-      boxShadow: "0 10px 26px rgba(33, 85, 255, 0.35)",
-    },
-  }}
->
-  Next
-</Button>
+                <Button
+                  onClick={handleNext}
+                  variant="contained"
+                  fullWidth
+                  sx={{
+                    mt: 2,
+                    py: 1.4,
+                    fontSize: "1rem",
+                    fontWeight: 700,
+                    borderRadius: "12px",
+                    background: "linear-gradient(135deg, #2155ff, #4f46e5)",
+                    textTransform: "none",
+                    boxShadow: "0 8px 20px rgba(33, 85, 255, 0.25)",
+                    "&:hover": {
+                      background: "linear-gradient(135deg, #1645cc, #4338ca)",
+                      boxShadow: "0 10px 26px rgba(33, 85, 255, 0.35)",
+                    },
+                  }}
+                >
+                  Next
+                </Button>
 
-{/* ✅ Aesthetic Login Section Below Button */}
-<Box
-  sx={{
-    mt: 3,
-    textAlign: "center",
-  }}
->
-  <Typography
-    variant="body2"
-    sx={{
-      color: "text.secondary",
-      mb: 1,
-    }}
-  >
-    Already have an account?
-  </Typography>
+                <Box
+                  sx={{
+                    mt: 2,
+                    textAlign: "center",
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "#6b7280",
+                      mb: 1,
+                      fontWeight: 500,
+                    }}
+                  >
+                    Already have an account?{" "}
+                    <Link
+                      href="/login"
+                      underline="hover"
+                      sx={{ color: "#0B75C9", fontWeight: 600 }}
+                    >
+                      Log in
+                    </Link>
+                  </Typography>
 
-  <Button
-    component={Link}
-    href="/login"
-    variant="outlined"
-    fullWidth
-    sx={{
-      borderRadius: "12px",
-      py: 1.2,
-      fontWeight: 600,
-      textTransform: "none",
-      color: "#2155ff",
-      borderColor: "rgba(33, 85, 255, 0.4)",
-      "&:hover": {
-        borderColor: "#2155ff",
-        backgroundColor: "rgba(33, 85, 255, 0.05)",
-      },
-    }}
-  >
-    Log in instead
-  </Button>
-</Box>
+                </Box>
 
-              </>
+              </Box>
             )}
 
             {step === 1 && (
-              <>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 <TextField
                   label="Skills Have (comma separated)"
                   name="skillsHave"
                   value={formData.skillsHave}
                   onChange={handleChange}
                   fullWidth
-                  margin="normal"
                   error={!!fieldErrors.skillsHave}
                   helperText={fieldErrors.skillsHave}
                   size="small"
-                  sx={textFieldSx}
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      color: "#1f2937",
+                      fontWeight: 500,
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "#6b7280",
+                      fontWeight: 500,
+                    },
+                  }}
                 />
 
                 <TextField
@@ -708,18 +702,26 @@ export default function SignupForm() {
                   value={formData.skillsWant}
                   onChange={handleChange}
                   fullWidth
-                  margin="normal"
                   error={!!fieldErrors.skillsWant}
                   helperText={fieldErrors.skillsWant}
                   size="small"
-                  sx={textFieldSx}
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      color: "#1f2937",
+                      fontWeight: 500,
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "#6b7280",
+                      fontWeight: 500,
+                    },
+                  }}
                 />
 
                 <Box
                   sx={{
                     display: "flex",
                     gap: 2,
-                    mt: 3,
+                    mt: 2,
                     flexDirection: { xs: "column", sm: "row" },
                   }}
                 >
@@ -733,6 +735,12 @@ export default function SignupForm() {
                       fontWeight: 600,
                       borderRadius: 1,
                       textTransform: "none",
+                      color: "#374151",
+                      borderColor: "#d1d5db",
+                      "&:hover": {
+                        borderColor: "#9ca3af",
+                        backgroundColor: "#f9fafb",
+                      },
                     }}
                   >
                     Back
@@ -755,7 +763,7 @@ export default function SignupForm() {
                     Sign Up
                   </Button>
                 </Box>
-              </>
+              </Box>
             )}
           </Box>
         </Box>

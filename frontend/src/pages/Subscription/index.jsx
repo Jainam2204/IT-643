@@ -109,12 +109,12 @@ const Subscription = () => {
       setProcessingPlan(planName);
 
       const { data: orderData } = await api.post(
-  "/subscription/create-order",
-  {
-    userId: currentUser._id,
-    planName,
-  }
-);
+        "/subscription/create-order",
+        {
+          userId: currentUser._id,
+          planName,
+        }
+      );
 
 
       console.log("Order created:", orderData);
@@ -146,7 +146,7 @@ const Subscription = () => {
         handler: async (response) => {
           console.log("Payment successful, response:", response);
           try {
-            
+
 
             if (
               !response.razorpay_payment_id ||
@@ -163,25 +163,25 @@ const Subscription = () => {
               paymentId: response.razorpay_payment_id,
             });
             const verifyRes = await api.post(
-  "/subscription/verify-payment",
-  {
-    userId: currentUser._id,
-    planName,
-    orderId: response.razorpay_order_id,
-    paymentId: response.razorpay_payment_id,
-    signature: response.razorpay_signature,
-  }
-);
+              "/subscription/verify-payment",
+              {
+                userId: currentUser._id,
+                planName,
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+              }
+            );
 
-            
+
 
             console.log("Payment verified successfully:", verifyRes.data);
             toast.success("Subscription activated successfully!");
 
             try {
-             const statusRes = await api.get(
-  `/subscription/status/${currentUser._id}`
-);
+              const statusRes = await api.get(
+                `/subscription/status/${currentUser._id}`
+              );
 
 
               const expiryDate = statusRes.data.expiryDate
@@ -208,8 +208,8 @@ const Subscription = () => {
             });
             toast.error(
               err.response?.data?.message ||
-                err.message ||
-                "Payment verification failed. Please contact support."
+              err.message ||
+              "Payment verification failed. Please contact support."
             );
           } finally {
             setProcessingPlan(null);
@@ -301,8 +301,8 @@ const Subscription = () => {
       console.error("Subscription error:", err);
       toast.error(
         err.response?.data?.message ||
-          err.message ||
-          "Failed to initiate payment. Please try again."
+        err.message ||
+        "Failed to initiate payment. Please try again."
       );
       setProcessingPlan(null);
     }
@@ -312,7 +312,7 @@ const Subscription = () => {
     return (
       <Box
         sx={{
-          minHeight: "60vh",
+          // minHeight: "60vh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -369,7 +369,8 @@ const Subscription = () => {
 
       <Box sx={{ maxWidth: 1200, mx: "auto", mt: 4 }}>
         <Grid container spacing={3} justifyContent="center">
-          {/* <Grid item xs={12} md={4}>
+
+          <Grid item xs={12} md={4}>
             <PlanCard
               title="Basic Plan"
               price={99}
@@ -381,6 +382,7 @@ const Subscription = () => {
               active={activePlan === "Basic"}
               loading={processingPlan === "Basic"}
               onClick={() => handleSubscribe("Basic")}
+              highlighted={activePlan === "Basic"}
             />
           </Grid>
 
@@ -391,46 +393,14 @@ const Subscription = () => {
               features={[
                 "Connect with up to 15 skill partners",
                 "Exchange skills faster and learn more",
-                "Become a true SkillXChange power-user",
+                "Become a true SkillXchange power-user",
               ]}
               active={activePlan === "Premium"}
               loading={processingPlan === "Premium"}
               onClick={() => handleSubscribe("Premium")}
-              highlighted
+              highlighted={activePlan === "Premium"}
             />
-          </Grid> */}
-
-          <Grid item xs={12} md={4}>
-  <PlanCard
-    title="Basic Plan"
-    price={99}
-    features={[
-      "Connect with up to 5 skill partners",
-      "Perfect for starting your skill-sharing journey",
-      "Start swapping skills and learning together",
-    ]}
-    active={activePlan === "Basic"}
-    loading={processingPlan === "Basic"}
-    onClick={() => handleSubscribe("Basic")}
-    highlighted={activePlan === "Basic"}
-  />
-</Grid>
-
-<Grid item xs={12} md={4}>
-  <PlanCard
-    title="Premium Plan"
-    price={299}
-    features={[
-      "Connect with up to 15 skill partners",
-      "Exchange skills faster and learn more",
-      "Become a true SkillXchange power-user",
-    ]}
-    active={activePlan === "Premium"}
-    loading={processingPlan === "Premium"}
-    onClick={() => handleSubscribe("Premium")}
-    highlighted={activePlan === "Premium"}
-  />
-</Grid>
+          </Grid>
 
         </Grid>
       </Box>
@@ -490,7 +460,7 @@ const PlanCard = ({
             <ListItemText
               primary={f}
               primaryTypographyProps={{
-                variant: "body2",
+                variant: "text",
                 align: "center",
                 sx: { mb: 0.5 },
               }}
@@ -517,10 +487,10 @@ const PlanCard = ({
         {active
           ? "Current Plan"
           : loading
-          ? "Processing..."
-          : disabled
-          ? "Stay Tuned"
-          : "Subscribe"}
+            ? "Processing..."
+            : disabled
+              ? "Stay Tuned"
+              : "Subscribe"}
       </Button>
     </Card>
   );

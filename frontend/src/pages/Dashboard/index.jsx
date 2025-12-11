@@ -9,34 +9,80 @@ import {
   Card,
   CardContent,
   Button,
+  Divider,
   Stack,
-  TextField,
-  InputAdornment,
-  IconButton,
-  Link,
   Avatar,
+  LinearProgress,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import ChatIcon from "@mui/icons-material/Chat";
-import DescriptionIcon from "@mui/icons-material/Description";
-import PeopleIcon from "@mui/icons-material/People";
-import AddIcon from "@mui/icons-material/Add";
-import CheckIcon from "@mui/icons-material/Check";
-import CloseIcon from "@mui/icons-material/Close";
+import PersonIcon from "@mui/icons-material/Person";
+import BoltIcon from "@mui/icons-material/Bolt";
+import HandshakeIcon from "@mui/icons-material/Handshake";
+import ReportProblemIcon from "@mui/icons-material/ReportProblem";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
+
+const PRIMARY = "#0B75C9";
+const MUTED = "#64748b";
+
+const STAT_WIDTH = { xs: "100%", sm: "100%", md: "220px" }; 
+const STAT_HEIGHT = 180; 
+
+const StatCard = ({ icon, title, value, subtitle = "" }) => (
+  <Paper
+    elevation={1}
+    sx={{
+      width: STAT_WIDTH,
+      height: STAT_HEIGHT,
+      minHeight: STAT_HEIGHT,
+      maxWidth: "100%",
+      borderRadius: 3,
+      display: "flex",
+      flexDirection: "column",
+      gap: 1.5,
+      alignItems: "center",
+      justifyContent: "center",
+      textAlign: "center",
+      backgroundColor: "#fff",
+      boxShadow: "0 8px 28px rgba(16,24,40,0.06)",
+      px: 2,
+    }}
+  >
+    <Avatar sx={{ bgcolor: "rgba(11,117,201,0.12)", color: PRIMARY, mb: 0.5 }}>
+      {icon}
+    </Avatar>
+
+    <Typography variant="subtitle2" sx={{ color: MUTED, fontWeight: 600 }}>
+      {title}
+    </Typography>
+
+    <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f1724" }}>
+      {value}
+    </Typography>
+
+    {subtitle ? (
+      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+        {subtitle}
+      </Typography>
+    ) : null}
+  </Paper>
+);
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [connections, setConnections] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
-  const [incomingRequests, setIncomingRequests] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [reportStats, setReportStats] = useState({
+    reportCount: 0,
+    isBanned: false,
+    maxAllowedBeforeBan: 3,
+  });
 
+  // fetch logged-in user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -55,28 +101,30 @@ const Dashboard = () => {
   }, [navigate]);
 
   useEffect(() => {
+    const fetchReportStats = async () => {
+      if (!user) return;
+      try {
+        const res = await api.get("/report/my-stats");
+        setReportStats(res.data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to fetch report stats");
+      }
+    };
+    fetchReportStats();
+  }, [user]);
+
+  useEffect(() => {
     const fetchConnections = async () => {
       try {
         const res = await api.get("/connect/connections");
         setConnections(res.data.data || []);
       } catch (err) {
         console.error(err);
+        toast.error("Failed to fetch connections");
       }
     };
     if (user) fetchConnections();
-  }, [user]);
-
-  useEffect(() => {
-    const fetchIncomingRequests = async () => {
-      if (!user) return;
-      try {
-        const res = await api.get("/connect/incoming-requests");
-        setIncomingRequests(res.data || []);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchIncomingRequests();
   }, [user]);
 
   useEffect(() => {
@@ -84,10 +132,13 @@ const Dashboard = () => {
       if (!user) return;
       try {
         const res = await api.get("/connect/suggestions");
-        const filtered = res.data.filter((s) => s.status !== "accepted");
+        const filtered = Array.isArray(res.data)
+          ? res.data.filter((s) => s.status !== "accepted")
+          : [];
         setSuggestions(filtered);
       } catch (err) {
         console.error(err);
+        toast.error("Failed to fetch connection suggestions");
       }
     };
     fetchSuggestions();
@@ -120,6 +171,7 @@ const Dashboard = () => {
       toast.success("Connection request sent!");
       setStatuses((prev) => ({ ...prev, [receiverId]: "pending" }));
     } catch (err) {
+      console.error(err);
       toast.error(err.response?.data?.message || "Failed to send request");
     }
   };
@@ -127,14 +179,12 @@ const Dashboard = () => {
   const handleAccept = async (senderId) => {
     try {
       await api.post("/connect/accept", { senderId, receiverId: user._id });
-      toast.success("You're now connected!");
-      setIncomingRequests((prev) => prev.filter((r) => r._id !== senderId));
+      toast.success("You’re now connected!");
+      setSuggestions((prev) => prev.filter((s) => s._id !== senderId));
       setStatuses((prev) => ({ ...prev, [senderId]: "accepted" }));
-      // Refresh connections
-      const res = await api.get("/connect/connections");
-      setConnections(res.data.data || []);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to accept request");
+      console.error(err);
+      toast.error("Failed to accept request");
     }
   };
 
@@ -142,515 +192,307 @@ const Dashboard = () => {
     try {
       await api.post("/connect/reject", { senderId, receiverId: user._id });
       toast.info("Connection request rejected!");
-      setIncomingRequests((prev) => prev.filter((r) => r._id !== senderId));
       setStatuses((prev) => ({ ...prev, [senderId]: "none" }));
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to reject request");
+      console.error(err);
+      toast.error("Failed to reject request");
     }
   };
 
-  if (loading) {
+  if (loading)
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-          backgroundColor: "#e3f2fd",
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
         <CircularProgress />
       </Box>
     );
-  }
 
   return (
-    <Box
-      sx={{
-        backgroundColor: "#e3f2fd",
-        minHeight: "100vh",
-        py: 4,
-      }}
-    >
-      <Container maxWidth="lg">
-        {/* Welcome Section */}
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 700,
-              color: "#1e293b",
-              mb: 1,
-            }}
-          >
-            Welcome back, {user?.name || "User"}!
-          </Typography>
-          <Typography variant="body1" sx={{ color: "#64748b" }}>
-            Connect with people who have the skills you want and want the skills you already know.
-          </Typography>
-        </Box>
+    <Box sx={{ backgroundColor: "#eaf7ff", minHeight: "100vh", pb: 6, pt: 6 }}>
+      <Container>
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 3, md: 4 },
+            borderRadius: 3,
+            mb: 4,
+            background: "#fff",
+            boxShadow: "0 10px 30px rgba(16,24,40,0.06)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            flexWrap: "wrap",
+          }}
+        >
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 800 }}>
+              Welcome back{user ? `, ${user.name.split(" ")[0]}` : ""}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+              Find people who match your skills and start learning together.
+            </Typography>
+          </Box>
 
-        {/* Search Bar */}
-        <Box sx={{ mb: 4 }}>
-          <Paper
-            elevation={0}
-            sx={{
-              p: 0,
-              borderRadius: 2,
-              backgroundColor: "#ffffff",
-              boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <TextField
-              fullWidth
-              placeholder="Search messages, resources, users..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    border: "none",
-                  },
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "#64748b" }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: { xs: 2, md: 0 } }}>
             <Button
               variant="contained"
+              onClick={() => navigate("/connections")}
               sx={{
-                m: 1,
+                backgroundColor: PRIMARY,
+                "&:hover": { backgroundColor: "#0962a8" },
                 px: 3,
-                py: 1.5,
-                borderRadius: 1,
-                backgroundColor: "#1976d2",
-                textTransform: "none",
-                "&:hover": {
-                  backgroundColor: "#1565c0",
-                },
+                py: 1,
+                fontWeight: 700,
+                borderRadius: 2,
               }}
             >
-              Search
+              Find Connections
             </Button>
-          </Paper>
+            <Button
+              variant="outlined"
+              onClick={() => navigate("/profile")}
+              sx={{
+                borderRadius: 2,
+                px: 2.5,
+                color: "text.primary",
+                borderColor: "rgba(16,24,40,0.06)",
+                fontWeight: 600,
+              }}
+              startIcon={<OpenInNewIcon />}
+            >
+              View Profile
+            </Button>
+          </Stack>
+        </Paper>
+
+        {/* Centered stat cards with consistent size */}
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+          <Box sx={{ width: "100%", maxWidth: 980 }}>
+            <Grid container spacing={3} justifyContent="center" alignItems="stretch">
+              <Grid item xs={12} sm={6} md="auto">
+                <StatCard
+                  icon={<PersonIcon />}
+                  title="Profile"
+                  value={user?.name || "—"}
+                  subtitle={user?.email || ""}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} md="auto">
+                <StatCard
+                  icon={<BoltIcon />}
+                  title="Skills Have"
+                  value={user?.skillsHave?.join(", ") || "N/A"}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} md="auto">
+                <StatCard
+                  icon={<HandshakeIcon />}
+                  title="Connections"
+                  value={connections.length}
+                  subtitle={`Free left: ${user?.freeConnectionLeft ?? 0}`}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} md="auto">
+                <Paper
+                  elevation={1}
+                  sx={{
+                    width: STAT_WIDTH,
+                    height: STAT_HEIGHT,
+                    minHeight: STAT_HEIGHT,
+                    borderRadius: 3,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    backgroundColor: "#fff",
+                    boxShadow: "0 8px 28px rgba(16,24,40,0.06)",
+                    px: 2,
+                  }}
+                >
+                  <Avatar sx={{ bgcolor: "rgba(244,63,94,0.12)", color: "#ef4444", mb: 0.5 }}>
+                    <ReportProblemIcon />
+                  </Avatar>
+
+                  <Typography variant="subtitle2" sx={{ color: MUTED, fontWeight: 600 }}>
+                    Reports
+                  </Typography>
+
+                  <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
+                    {reportStats.reportCount}
+                  </Typography>
+
+                  <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                    {reportStats.isBanned ? "Account banned" : "Reports on your account"}
+                  </Typography>
+
+                  <Box sx={{ mt: 1, width: "80%" }}>
+                    <LinearProgress
+                      variant="determinate"
+                      value={Math.min((reportStats.reportCount / reportStats.maxAllowedBeforeBan) * 100, 100)}
+                      sx={{ height: 8, borderRadius: 2, mt: 1 }}
+                    />
+                    <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5 }}>
+                      {reportStats.reportCount}/{reportStats.maxAllowedBeforeBan} reports
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Grid>
+            </Grid>
+          </Box>
         </Box>
 
-        {/* Action Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={6} sm={3}>
-            <Card
-              elevation={0}
-              sx={{
-                borderRadius: 2,
-                backgroundColor: "#ffffff",
-                boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
-                textAlign: "center",
-                p: 3,
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.12)",
-                  transform: "translateY(-2px)",
-                },
-              }}
-              onClick={() => navigate("/chat")}
-            >
-              <ChatIcon sx={{ fontSize: 40, color: "#1976d2", mb: 1 }} />
-              <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b", mb: 0.5 }}>
-                Start Chat
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 3, md: 4 },
+            borderRadius: 3,
+            background: "#ffffff",
+            boxShadow: "0 8px 28px rgba(16,24,40,0.06)",
+            border: "1px solid rgba(0,0,0,0.04)",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: PRIMARY }}>
+                  Suggested Connections
               </Typography>
-              <Typography variant="body2" sx={{ color: "#64748b" }}>
-                Send a message
+              <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                Matches based on your skills — connect, learn, and grow together.
               </Typography>
-            </Card>
-          </Grid>
-
-          <Grid item xs={6} sm={3}>
-            <Card
-              elevation={0}
-              sx={{
-                borderRadius: 2,
-                backgroundColor: "#ffffff",
-                boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
-                textAlign: "center",
-                p: 3,
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.12)",
-                  transform: "translateY(-2px)",
-                },
-              }}
+            </Box>
+            <Button
+              size="small"
               onClick={() => navigate("/connections")}
+              sx={{ textTransform: "none", color: PRIMARY }}
             >
-              <PeopleIcon sx={{ fontSize: 40, color: "#1976d2", mb: 1 }} />
-              <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b", mb: 0.5 }}>
-                Connections
-              </Typography>
-              <Typography variant="body2" sx={{ color: "#64748b" }}>
-                View connections
-              </Typography>
-            </Card>
-          </Grid>
+              See all
+            </Button>
+          </Box>
 
-          <Grid item xs={6} sm={3}>
-            <Card
-              elevation={0}
-              sx={{
-                borderRadius: 2,
-                backgroundColor: "#ffffff",
-                boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
-                textAlign: "center",
-                p: 3,
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.12)",
-                  transform: "translateY(-2px)",
-                },
-              }}
-              onClick={() => navigate("/profile")}
-            >
-              <DescriptionIcon sx={{ fontSize: 40, color: "#1976d2", mb: 1 }} />
-              <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b", mb: 0.5 }}>
-                Profile
-              </Typography>
-              <Typography variant="body2" sx={{ color: "#64748b" }}>
-                View your profile
-              </Typography>
-            </Card>
-          </Grid>
+          <Divider sx={{ mb: 3 }} />
 
-          <Grid item xs={6} sm={3}>
-            <Card
-              elevation={0}
-              sx={{
-                borderRadius: 2,
-                backgroundColor: "#ffffff",
-                boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
-                textAlign: "center",
-                p: 3,
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.12)",
-                  transform: "translateY(-2px)",
-                },
-              }}
-              onClick={() => navigate("/connections")}
-            >
-              <AddIcon sx={{ fontSize: 40, color: "#1976d2", mb: 1 }} />
-              <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b", mb: 0.5 }}>
-                Find Connections
+          {!suggestions.length ? (
+            <Box sx={{ py: 6, textAlign: "center" }}>
+              <Typography variant="body1" sx={{ color: "text.secondary" }}>
+                No matches found yet. Update your skills or try again later.
               </Typography>
-              <Typography variant="body2" sx={{ color: "#64748b" }}>
-                Discover new people
-              </Typography>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* Recent Activity Sections */}
-        <Grid container spacing={3}>
-          {/* Incoming Connection Requests */}
-          {incomingRequests.length > 0 && (
-            <Grid item xs={12}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
-                  borderRadius: 2,
-                  backgroundColor: "#ffffff",
-                  boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
-                  mb: 3,
-                }}
-              >
-                <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b", mb: 2 }}>
-                  Connection Requests
-                </Typography>
-                <Grid container spacing={2}>
-                  {incomingRequests.map((request) => (
-                    <Grid item xs={12} sm={6} md={4} key={request._id}>
-                      <Card
-                        elevation={0}
-                        sx={{
-                          borderRadius: 2,
-                          border: "1px solid #e2e8f0",
-                          p: 2,
-                        }}
-                      >
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-                          <Avatar
-                            sx={{
-                              width: 48,
-                              height: 48,
-                              backgroundColor: "#1976d2",
-                              color: "white",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {request.name?.charAt(0).toUpperCase()}
-                          </Avatar>
-                          <Box flex={1}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#1e293b" }}>
-                              {request.name}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: "#64748b" }}>
-                              {request.email}
-                            </Typography>
-                          </Box>
-                        </Box>
-                        <Stack direction="row" spacing={1}>
-                          <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<CheckIcon />}
-                            onClick={() => handleAccept(request._id)}
-                            sx={{
-                              flex: 1,
-                              textTransform: "none",
-                              borderRadius: 1,
-                              backgroundColor: "#10b981",
-                              "&:hover": {
-                                backgroundColor: "#059669",
-                              },
-                            }}
-                          >
-                            Accept
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<CloseIcon />}
-                            onClick={() => handleReject(request._id)}
-                            sx={{
-                              flex: 1,
-                              textTransform: "none",
-                              borderRadius: 1,
-                              borderColor: "#ef4444",
-                              color: "#ef4444",
-                              "&:hover": {
-                                borderColor: "#dc2626",
-                                backgroundColor: "#fef2f2",
-                              },
-                            }}
-                          >
-                            Reject
-                          </Button>
-                        </Stack>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Paper>
-            </Grid>
-          )}
-
-          {/* Recent Connections */}
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                borderRadius: 2,
-                backgroundColor: "#ffffff",
-                boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
-                height: "100%",
-              }}
-            >
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b" }}>
-                  Recent Connections
-                </Typography>
-                <Link
-                  component="button"
-                  onClick={() => navigate("/connections")}
-                  sx={{
-                    color: "#1976d2",
-                    textDecoration: "none",
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    "&:hover": {
-                      textDecoration: "underline",
-                    },
-                  }}
-                >
-                  View all
-                </Link>
-              </Box>
-              {connections.length === 0 ? (
-                <Typography align="center" sx={{ color: "#64748b", py: 4 }}>
-                  No connections yet
-                </Typography>
-              ) : (
-                <Box>
-                  {connections.slice(0, 3).map((conn) => (
-                    <Box
-                      key={conn._id}
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {suggestions.map((s) => {
+                const status = statuses[s._id] || "none";
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={s._id}>
+                    <Card
+                      elevation={1}
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        py: 1.5,
-                        borderBottom: "1px solid #e2e8f0",
-                        "&:last-child": {
-                          borderBottom: "none",
-                        },
+                        borderRadius: 2,
+                        transition: "all 0.25s ease",
+                        "&:hover": { transform: "translateY(-6px)", boxShadow: "0 14px 36px rgba(16,24,40,0.08)" },
                       }}
                     >
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: "50%",
-                          backgroundColor: "#1976d2",
-                          color: "white",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {conn.name?.charAt(0).toUpperCase()}
-                      </Box>
-                      <Box flex={1}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#1e293b" }}>
-                          {conn.name}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "#64748b" }}>
-                          {conn.email}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  ))}
-                </Box>
-              )}
-            </Paper>
-          </Grid>
+                      <CardContent>
+                        <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ color: MUTED, fontWeight: 700 }}>
+                              {s.name}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                              {s.email}
+                            </Typography>
+                          </Box>
 
-          {/* Suggested Connections */}
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                borderRadius: 2,
-                backgroundColor: "#ffffff",
-                boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
-                height: "100%",
-              }}
-            >
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b" }}>
-                  Suggested Connections
-                </Typography>
-                <Link
-                  component="button"
-                  onClick={() => navigate("/connections")}
-                  sx={{
-                    color: "#1976d2",
-                    textDecoration: "none",
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    "&:hover": {
-                      textDecoration: "underline",
-                    },
-                  }}
-                >
-                  View all
-                </Link>
-              </Box>
-              {!suggestions.length ? (
-                <Typography align="center" sx={{ color: "#64748b", py: 4 }}>
-                  No suggestions yet
-                </Typography>
-              ) : (
-                <Box>
-                  {suggestions.slice(0, 3).map((s) => {
-                    const status = statuses[s._id] || "none";
-                    return (
-                      <Box
-                        key={s._id}
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 2,
-                          py: 1.5,
-                          borderBottom: "1px solid #e2e8f0",
-                          "&:last-child": {
-                            borderBottom: "none",
-                          },
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: "50%",
-                            backgroundColor: "#1976d2",
-                            color: "white",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {s.name?.charAt(0).toUpperCase()}
-                        </Box>
-                        <Box flex={1}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#1e293b" }}>
-                            {s.name}
+                          <Avatar sx={{ bgcolor: "rgba(11,117,201,0.12)", color: PRIMARY }}>
+                            {s.name ? s.name[0].toUpperCase() : "U"}
+                          </Avatar>
+                        </Stack>
+
+                        <Stack spacing={1} sx={{ mt: 2 }}>
+                          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            <strong>Have:</strong> {s.skillsHave?.join(", ") || "N/A"}
                           </Typography>
-                          <Typography variant="caption" sx={{ color: "#64748b" }}>
-                            {s.email}
+                          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            <strong>Want:</strong> {s.skillsWant?.join(", ") || "N/A"}
                           </Typography>
-                        </Box>
-                        {status === "none" && (
-                          <Button
-                            size="small"
-                            variant="contained"
-                            onClick={() => handleConnect(s._id)}
-                            sx={{
-                              textTransform: "none",
-                              borderRadius: 1,
-                              backgroundColor: "#1976d2",
-                              "&:hover": {
-                                backgroundColor: "#1565c0",
-                              },
-                            }}
-                          >
-                            Connect
-                          </Button>
-                        )}
-                        {status === "pending" && (
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            disabled
-                            sx={{
-                              textTransform: "none",
-                              borderRadius: 1,
-                            }}
-                          >
-                            Pending
-                          </Button>
-                        )}
-                      </Box>
-                    );
-                  })}
-                </Box>
-              )}
-            </Paper>
-          </Grid>
-        </Grid>
+                        </Stack>
+
+                        <Stack direction="row" spacing={1.25} sx={{ mt: 2, justifyContent: "center" }}>
+                          {status === "none" && (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={() => handleConnect(s._id)}
+                              sx={{
+                                backgroundColor: PRIMARY,
+                                "&:hover": { backgroundColor: "#0962a8" },
+                                textTransform: "none",
+                                borderRadius: 2,
+                                px: 2.5,
+                                fontWeight: 700,
+                              }}
+                            >
+                              Connect
+                            </Button>
+                          )}
+
+                          {status === "pending" && (
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              disabled
+                              sx={{
+                                textTransform: "none",
+                                borderRadius: 2,
+                                px: 2.5,
+                                color: MUTED,
+                                borderColor: "rgba(16,24,40,0.06)",
+                              }}
+                            >
+                              Pending
+                            </Button>
+                          )}
+
+                          {status === "received" && (
+                            <>
+                              <Button
+                                variant="contained"
+                                color="success"
+                                size="small"
+                                onClick={() => handleAccept(s._id)}
+                                sx={{ textTransform: "none", borderRadius: 2, px: 2 }}
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                color="error"
+                                size="small"
+                                onClick={() => handleReject(s._id)}
+                                sx={{ textTransform: "none", borderRadius: 2, px: 2 }}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
+
+                          {status === "accepted" && (
+                            <Button variant="contained" size="small" disabled sx={{ borderRadius: 2 }}>
+                              Connected
+                            </Button>
+                          )}
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          )}
+        </Paper>
       </Container>
     </Box>
   );

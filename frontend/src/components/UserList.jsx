@@ -39,14 +39,6 @@ function UserList({ users, selectedUser, onSelectUser, loading, error }) {
         <Typography variant="subtitle1" fontWeight={600} sx={{ color: '#1e293b' }}>
           Chats
         </Typography>
-        <Box>
-          <IconButton size="small" sx={{ color: '#1976d2' }}>
-            <GroupIcon fontSize="small" />
-          </IconButton>
-          <IconButton size="small" sx={{ color: '#1976d2' }}>
-            <AddIcon fontSize="small" />
-          </IconButton>
-        </Box>
       </Box>
 
       {loading ? (

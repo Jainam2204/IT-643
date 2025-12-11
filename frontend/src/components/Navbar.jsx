@@ -6,6 +6,7 @@ import {
   Button,
   IconButton,
   Box,
+  InputBase,
   Drawer,
   List,
   ListItem,
@@ -17,16 +18,14 @@ import {
   Popover,
   Card,
   CardContent,
-  Chip,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CloseIcon from "@mui/icons-material/Close";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import PeopleIcon from "@mui/icons-material/People";
-import ChatIcon from "@mui/icons-material/Chat";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useNotifications } from "../context/NotificationContext";
@@ -36,11 +35,7 @@ const Navbar = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const navigate = useNavigate();
-  const navItems = [
-    { name: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
-    { name: "Connections", path: "/connections", icon: <PeopleIcon /> },
-    { name: "Chat", path: "/chat", icon: <ChatIcon /> },
-  ];
+  const navItems = ["Dashboard", "Connections", "Chat", "Subscription", "Profile"];
   const { meetingNotifications, removeMeetingNotification } = useNotifications();
 
   const toggleDrawer = (open) => () => {
@@ -55,7 +50,7 @@ const Navbar = () => {
     setNotificationAnchorEl(null);
   };
 
-  const handleJoinMeet = (meetingId, connectionId) => {
+  const handleJoinMeet = (meetingId) => {
     removeMeetingNotification(meetingId);
     handleNotificationClose();
     navigate(`/meet/${meetingId}`);
@@ -68,8 +63,10 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout");
+
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+
       toast.success("Logged out successfully!");
       navigate("/login");
     } catch (err) {
@@ -81,18 +78,16 @@ const Navbar = () => {
   const notificationCount = Object.keys(meetingNotifications).length;
   const open = Boolean(notificationAnchorEl);
 
-  // Get current user from localStorage
-  const userData = localStorage.getItem("user");
-  const currentUser = userData ? JSON.parse(userData) : null;
-
   return (
     <>
       <AppBar
         position="fixed"
+        elevation={1}
         sx={{
           backgroundColor: "#ffffff",
-          boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
-          borderBottom: "1px solid #e0e0e0",
+          color: "#0f1724",
+          boxShadow: "0px 4px 16px rgba(16,24,40,0.06)",
+          backdropFilter: "blur(6px)",
         }}
       >
         <Toolbar
@@ -103,181 +98,160 @@ const Navbar = () => {
             px: { xs: 2, md: 4 },
           }}
         >
-          {/* Logo */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <IconButton
-              sx={{ color: "#1e293b", display: { xs: "flex", md: "none" } }}
+              sx={{ color: "text.primary", display: { xs: "flex", md: "none" } }}
               onClick={toggleDrawer(true)}
             >
               <MenuIcon />
             </IconButton>
 
-            <Typography
-              variant="h6"
-              component="a"
-              href="/dashboard"
-              sx={{
-                textDecoration: "none",
-                fontWeight: 700,
-                color: "#1976d2",
-                fontSize: "1.5rem",
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-              }}
-            >
-              <Box
-                component="span"
+            <motion.div whileHover={{ scale: 1.02 }}>
+              <Typography
+                variant="h6"
+                component="a"
+                href="/dashboard"
                 sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 1,
-                  backgroundColor: "#1976d2",
+                  textDecoration: "none",
+                  fontWeight: 700,
+                  color: "#0f1724",
+                  fontSize: "1.25rem",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontSize: "1.2rem",
+                  gap: 0.3,
                 }}
               >
-                💬
-              </Box>
-              SkillXchange
-            </Typography>
+                <Box component="span" sx={{ color: "#0B75C9", fontWeight: 800 }}>
+                  Skill
+                </Box>
+                <Box component="span" sx={{ color: "#0f1724" }}>
+                  XChange
+                </Box>
+              </Typography>
+            </motion.div>
           </Box>
 
-          {/* Nav Buttons */}
-          <Box sx={{ display: { xs: "none", md: "flex" }, gap: 0.5 }}>
-            {navItems.map((item) => (
-              <Button
-                key={item.name}
-                href={item.path}
-                startIcon={item.icon}
-                sx={{
-                  color: "#64748b",
-                  fontWeight: 500,
-                  textTransform: "none",
-                  "&:hover": {
-                    backgroundColor: "#f8fafc",
-                    color: "#1976d2",
-                  },
-                }}
-              >
-                {item.name}
-              </Button>
-            ))}
-          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box sx={{ display: { xs: "none", md: "flex" }, gap: 0.5 }}>
+              {navItems.map((item) => (
+                <motion.div key={item} whileHover={{ y: -2 }}>
+                  <Button
+                    href={`/${item.toLowerCase()}`}
+                    sx={{
+                      color: "text.primary",
+                      fontWeight: 600,
+                      textTransform: "none",
+                      borderRadius: 2,
+                      "&:hover": {
+                        backgroundColor: alpha("#0B75C9", 0.06),
+                        color: "#0B75C9",
+                      },
+                    }}
+                  >
+                    {item}
+                  </Button>
+                </motion.div>
+              ))}
+            </Box>
 
-          {/* Right Section */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <IconButton
-              sx={{ color: "#64748b" }}
-              onClick={handleNotificationClick}
-            >
-              <Badge badgeContent={notificationCount} color="error">
+            <IconButton sx={{ color: "#0B75C9" }} onClick={handleNotificationClick}>
+              <Badge badgeContent={notificationCount} color="primary">
                 <NotificationsActiveIcon />
               </Badge>
             </IconButton>
 
-            {currentUser && (
-              <Button
-                startIcon={<AccountCircleIcon />}
-                sx={{
-                  color: "#1e293b",
-                  fontWeight: 500,
-                  textTransform: "none",
-                  "&:hover": {
-                    backgroundColor: "#f8fafc",
-                  },
-                }}
-                onClick={() => navigate("/profile")}
-              >
-                {currentUser.name}
-              </Button>
-            )}
-
-            <Button
-              onClick={handleLogout}
-              startIcon={<LogoutIcon />}
-              sx={{
-                color: "#ef4444",
-                fontWeight: 600,
-                textTransform: "none",
-                "&:hover": {
-                  backgroundColor: "#fef2f2",
-                },
-              }}
-            >
-              Logout
-            </Button>
-
-            {currentUser && (
-              <Chip
-                label="USER"
-                size="small"
-                sx={{
-                  backgroundColor: "#1976d2",
-                  color: "white",
-                  fontWeight: 600,
-                  height: 24,
-                  fontSize: "0.7rem",
-                }}
-              />
-            )}
+            <Box sx={{ display: { xs: "none", md: "block" } }}>
+              <motion.div whileHover={{ scale: 1.02 }}>
+                <Button
+                  onClick={handleLogout}
+                  startIcon={<LogoutIcon />}
+                  sx={{
+                    color: "#0B75C9",
+                    backgroundColor: alpha("#0B75C9", 0.06),
+                    fontWeight: 700,
+                    borderRadius: "18px",
+                    textTransform: "none",
+                    px: 2.5,
+                    py: 0.7,
+                    border: `1px solid ${alpha("#0B75C9", 0.12)}`,
+                    "&:hover": {
+                      backgroundColor: alpha("#0B75C9", 0.1),
+                    },
+                  }}
+                >
+                  Logout
+                </Button>
+              </motion.div>
+            </Box>
           </Box>
         </Toolbar>
       </AppBar>
 
-      {/* Drawer Menu for Mobile */}
       <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
         <Box
           sx={{
-            width: 250,
+            width: 260,
             backgroundColor: "#ffffff",
             height: "100%",
+            color: "#0f1724",
             display: "flex",
             flexDirection: "column",
+            justifyContent: "space-between",
+            p: 2,
           }}
         >
-          <Typography
-            variant="h6"
-            sx={{
-              textAlign: "center",
-              fontWeight: 600,
-              mt: 2,
-              mb: 1,
-              color: "#1e293b",
-            }}
-          >
-            Menu
-          </Typography>
-          <List>
-            {navItems.map((item) => (
-              <ListItem key={item.name} disablePadding>
-                <ListItemButton
-                  component="a"
-                  href={item.path}
-                  sx={{
-                    "&:hover": {
-                      backgroundColor: "#f8fafc",
-                    },
-                  }}
-                >
-                  <ListItemText primary={item.name} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
+          <Box>
+            <Typography
+              variant="h6"
+              sx={{
+                textAlign: "center",
+                fontWeight: 800,
+                mt: 1,
+                mb: 1,
+                color: "#0f1724",
+              }}
+            >
+              Menu
+            </Typography>
+            <List>
+              {navItems.map((item) => (
+                <ListItem key={item} disablePadding>
+                  <ListItemButton
+                    component="a"
+                    href={`/${item.toLowerCase()}`}
+                    sx={{
+                      borderRadius: 1,
+                      mb: 0.5,
+                      "&:hover": {
+                        backgroundColor: alpha("#0B75C9", 0.06),
+                        color: "#0B75C9",
+                      },
+                    }}
+                  >
+                    <ListItemText primary={item} primaryTypographyProps={{ fontWeight: 600 }} />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Box>
 
+          {/* Drawer Logout */}
           <Box sx={{ mb: 2, textAlign: "center" }}>
             <Divider sx={{ mb: 1 }} />
             <Button
               onClick={handleLogout}
               startIcon={<LogoutIcon />}
               sx={{
-                color: "#ef4444",
-                fontWeight: 600,
+                color: "#0B75C9",
+                backgroundColor: alpha("#0B75C9", 0.08),
+                fontWeight: 700,
+                borderRadius: "18px",
                 textTransform: "none",
+                px: 3,
+                py: 0.8,
+                "&:hover": {
+                  backgroundColor: alpha("#0B75C9", 0.12),
+                },
               }}
             >
               Logout
@@ -291,35 +265,16 @@ const Navbar = () => {
         open={open}
         anchorEl={notificationAnchorEl}
         onClose={handleNotificationClose}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-          },
-        }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <Box
-          sx={{
-            width: 350,
-            maxHeight: 400,
-            overflowY: "auto",
-            p: 2,
-          }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "#1e293b" }}>
+        <Box sx={{ width: 360, maxHeight: 420, overflowY: "auto", p: 2 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
             Meeting Invitations
           </Typography>
 
           {notificationCount === 0 ? (
-            <Typography variant="body2" sx={{ color: "#64748b" }}>
+            <Typography variant="body2" color="text.secondary">
               No pending meeting invitations
             </Typography>
           ) : (
@@ -327,53 +282,46 @@ const Navbar = () => {
               {Object.entries(meetingNotifications).map(([meetingId, notif]) => (
                 <Card
                   key={meetingId}
-                  elevation={0}
+                  elevation={1}
                   sx={{
-                    backgroundColor: "#ffffff",
-                    border: "1px solid #e0e0e0",
                     borderRadius: 2,
+                    border: `1px solid ${alpha("#0B75C9", 0.12)}`,
+                    backgroundColor: "#ffffff",
                   }}
                 >
-                  <CardContent sx={{ pb: 1 }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        mb: 1.5,
-                      }}
-                    >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#1e293b" }}>
+                  <CardContent sx={{ pb: 1.25 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                         📹 {notif.connectionName}
                       </Typography>
+
                       <IconButton
                         size="small"
                         onClick={() => handleDismissNotification(meetingId)}
                         sx={{
-                          color: "#64748b",
+                          color: "text.secondary",
                           padding: 0,
-                          "&:hover": { backgroundColor: "#f8fafc" },
+                          "&:hover": { opacity: 0.8 },
                         }}
                       >
-                        <CloseIcon sx={{ fontSize: "18px" }} />
+                        <CloseIcon sx={{ fontSize: 18 }} />
                       </IconButton>
                     </Box>
-                    <Typography variant="body2" sx={{ mb: 1.5, color: "#64748b" }}>
+
+                    <Typography variant="body2" sx={{ mb: 1.25, color: "text.secondary" }}>
                       started a meeting with you
                     </Typography>
+
                     <Button
                       variant="contained"
                       size="small"
                       fullWidth
-                      onClick={() => handleJoinMeet(meetingId, notif.connectionId)}
+                      onClick={() => handleJoinMeet(meetingId)}
                       sx={{
-                        backgroundColor: "#1976d2",
-                        color: "#ffffff",
-                        fontWeight: 600,
-                        textTransform: "none",
-                        "&:hover": {
-                          backgroundColor: "#1565c0",
-                        },
+                        backgroundColor: "#0B75C9",
+                        color: "#fff",
+                        fontWeight: 700,
+                        "&:hover": { backgroundColor: "#0962a8" },
                       }}
                     >
                       Join Meet
@@ -385,6 +333,8 @@ const Navbar = () => {
           )}
         </Box>
       </Popover>
+
+      <Box sx={{ height: { xs: 64, md: 72 } }} />
     </>
   );
 };
