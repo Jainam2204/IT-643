@@ -8,32 +8,18 @@ This directory contains comprehensive unit and integration tests for the SkillXC
 test/
 ├── unit/                           # Unit tests for individual components
 │   ├── middleware/                 # Middleware unit tests
-│   │   ├── authMiddleware.test.js
 │   │   ├── checkBanned.test.js
-│   │   ├── rateLimiter.test.js
 │   │   └── errorHandler.test.js
 │   ├── services/                   # Service unit tests
 │   │   ├── authService.test.js
-│   │   ├── connectionService.test.js
-│   │   ├── reportService.test.js
-│   │   └── userService.test.js
 │   ├── controllers/                # Controller unit tests
-│   │   ├── authController.test.js
-│   │   ├── connectionController.test.js
 │   │   └── reportController.test.js
 │   └── validators.test.js          # Password and validation logic tests
 ├── integration/                    # Integration tests for API endpoints
 │   ├── auth.integration.test.js
-│   ├── password-validation.integration.test.js
-│   ├── connection.integration.test.js
-│   ├── report.integration.test.js
-│   ├── user.integration.test.js
-│   ├── meeting.integration.test.js
 │   ├── message.integration.test.js
-│   └── subscription.integration.test.js
 ├── register.test.js                # Registration endpoint tests
 ├── login.test.js                   # Login endpoint tests
-├── verification.test.js            # Email verification tests
 ├── setup.js                        # Global test setup
 └── README.md                       # This file
 ```
@@ -61,22 +47,11 @@ npm test -- --coverage
 ### Unit Tests
 
 #### Middleware Tests
-- **authMiddleware.test.js**: Authentication middleware tests
-  - Valid token handling
-  - Invalid token rejection
-  - Missing token handling
-  - User not found scenarios
-  - Expired token handling
 
 - **checkBanned.test.js**: Banned user check middleware
   - Allows non-banned users
   - Blocks banned users
   - Handles undefined user
-
-- **rateLimiter.test.js**: Rate limiting middleware tests
-  - API rate limiting
-  - Auth rate limiting
-  - Upload rate limiting
 
 - **errorHandler.test.js**: Error handling middleware
   - Error response formatting
@@ -90,37 +65,7 @@ npm test -- --coverage
   - Email verification
   - Profile retrieval
 
-- **connectionService.test.js**: Connection management service
-  - User suggestions based on skills
-  - Sending connection requests
-  - Accepting/rejecting requests
-  - Connection status checking
-  - Getting user connections
-
-- **reportService.test.js**: User reporting service
-  - Reporting users
-  - Auto-banning after threshold
-  - Checking report status
-  - Getting report statistics
-
-- **userService.test.js**: User profile management
-  - Getting user profiles
-  - Updating user profiles
-  - User lookup by ID
-
 #### Controller Tests
-- **authController.test.js**: Authentication controller
-  - Registration endpoint logic
-  - Login endpoint logic
-  - Profile retrieval
-  - Email verification
-  - Logout
-
-- **connectionController.test.js**: Connection controller
-  - Fetching suggestions
-  - Sending requests
-  - Accepting/rejecting requests
-  - Fetching connections
 
 - **reportController.test.js**: Report controller
   - Reporting users
@@ -135,11 +80,6 @@ npm test -- --coverage
 
 ### Integration Tests
 - **auth.integration.test.js**: Full authentication flow tests
-- **password-validation.integration.test.js**: Comprehensive password and verification code validation
-- **connection.integration.test.js**: Connection management API endpoints
-- **report.integration.test.js**: User reporting API endpoints
-- **user.integration.test.js**: User profile API endpoints
-- **meeting.integration.test.js**: Meeting creation and retrieval
 - **message.integration.test.js**: Message sending and retrieval
 
 ### Endpoint Tests
@@ -232,4 +172,5 @@ describe('Feature Name', () => {
   });
 });
 ```
+
 
